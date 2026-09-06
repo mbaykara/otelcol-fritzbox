@@ -164,7 +164,22 @@ receivers:
 - **Live smoke test:** OCB build from `example/`, debug exporter, real
   credentials via env vars → verify datapoints in stdout against the box UI.
 
-## 9. Build & run
+## 9. Go code quality bar
+
+- Idiomatic Go per Effective Go and the Go project style:
+  - errors wrapped with `%w`, never swallowed, no panics in library code;
+  - `context.Context` propagated into every blocking call (HTTP, SOAP);
+  - small, focused files; clear package boundaries (`tr064` client has no
+    collector/pdata imports, pdata stays out of the client);
+  - interfaces only where they enable testing (fake TR-064 client), not
+    speculatively.
+- Clean under `gofmt -s`, `go vet`, and `staticcheck`-level hygiene
+  (no unused code, correct struct tags, no naked returns in long functions).
+- Table-driven unit tests with `t.Run` subtests; fixtures in `testdata/`.
+- No third-party dependencies beyond the collector itself and the standard
+  library (TR-064 client and digest auth are hand-rolled).
+
+## 10. Build & run
 
 ```sh
 go generate ./...                     # runs mdatagen (tool dependency)
