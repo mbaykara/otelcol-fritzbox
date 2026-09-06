@@ -1,0 +1,210 @@
+type: fritzbox
+
+status:
+  class: receiver
+  stability:
+    development: [metrics]
+
+attributes:
+  error.type:
+    type: string
+    description: The type of DSL line error reported by the Fritz!Box.
+    enum: [fec, crc, hec]
+  external_ip:
+    description: The external (WAN) IP address currently assigned to the Fritz!Box.
+    type: string
+  hw.id:
+    description: >-
+      Synthetic hardware identifier required by the hw.network.* semantic
+      conventions. The Fritz!Box exposes no native hardware IDs, so they are
+      synthesized (e.g. fritzbox.wan, fritzbox.wlan1).
+    type: string
+  hw.name:
+    description: Easily recognizable name for the interface (e.g. wan, or the WLAN SSID).
+    type: string
+  network.io.direction:
+    type: string
+    description: The direction of traffic from the perspective of the Fritz!Box interface.
+    enum: [receive, transmit]
+  severity:
+    type: string
+    description: Severity classification of DSL errored seconds.
+    enum: [errored, severely_errored]
+  ssid:
+    description: SSID of the WLAN radio.
+    type: string
+
+metrics:
+  fritzbox.device.uptime:
+    enabled: true
+    stability: development
+    description: Time in seconds since the Fritz!Box was last restarted.
+    unit: s
+    gauge:
+      value_type: int
+
+  fritzbox.dsl.attenuation:
+    enabled: true
+    stability: development
+    description: DSL line attenuation.
+    unit: dB
+    gauge:
+      value_type: double
+    attributes: [network.io.direction]
+
+  fritzbox.dsl.error_seconds:
+    enabled: true
+    stability: development
+    description: Cumulative count of DSL errored seconds.
+    unit: s
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [severity]
+
+  fritzbox.dsl.noise_margin:
+    enabled: true
+    stability: development
+    description: DSL noise margin (signal-to-noise ratio).
+    unit: dB
+    gauge:
+      value_type: double
+    attributes: [network.io.direction]
+
+  fritzbox.dsl.rate.current:
+    enabled: true
+    stability: development
+    description: Current DSL sync rate.
+    unit: bit/s
+    gauge:
+      value_type: int
+    attributes: [network.io.direction]
+
+  fritzbox.dsl.rate.max:
+    enabled: true
+    stability: development
+    description: Maximum attainable DSL rate.
+    unit: bit/s
+    gauge:
+      value_type: int
+    attributes: [network.io.direction]
+
+  fritzbox.hosts.active:
+    enabled: false
+    stability: development
+    description: Number of hosts currently active on the Fritz!Box network. Costs one SOAP call per host per interval.
+    unit: "{host}"
+    gauge:
+      value_type: int
+
+  fritzbox.hosts.total:
+    enabled: true
+    stability: development
+    description: Total number of hosts known to the Fritz!Box.
+    unit: "{host}"
+    gauge:
+      value_type: int
+
+  fritzbox.wan.connection.status:
+    enabled: true
+    stability: development
+    description: WAN connection status (1 = Connected, 0 = anything else).
+    unit: "1"
+    gauge:
+      value_type: int
+
+  fritzbox.wan.connection.uptime:
+    enabled: true
+    stability: development
+    description: Time in seconds the current WAN connection has been established.
+    unit: s
+    gauge:
+      value_type: int
+
+  fritzbox.wan.external_ip:
+    enabled: false
+    stability: development
+    description: Always 1; the external WAN IP address is carried in the external_ip attribute.
+    unit: "1"
+    gauge:
+      value_type: int
+    attributes: [external_ip]
+
+  fritzbox.wlan.channel:
+    enabled: true
+    stability: development
+    description: Channel the WLAN radio is operating on.
+    unit: "1"
+    gauge:
+      value_type: int
+    attributes: [hw.id, ssid]
+
+  fritzbox.wlan.clients:
+    enabled: true
+    stability: development
+    description: Number of clients currently associated with the WLAN radio.
+    unit: "{client}"
+    gauge:
+      value_type: int
+    attributes: [hw.id, ssid]
+
+  hw.errors:
+    enabled: true
+    stability: development
+    description: Number of DSL line errors encountered by the Fritz!Box WAN interface.
+    unit: "{error}"
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [hw.id, error.type, network.io.direction]
+
+  hw.network.bandwidth.limit:
+    enabled: true
+    stability: development
+    description: Link speed of the Fritz!Box WAN interface.
+    unit: By/s
+    gauge:
+      value_type: int
+    attributes: [hw.id]
+
+  hw.network.bandwidth.utilization:
+    enabled: true
+    stability: development
+    description: Utilization of the Fritz!Box WAN bandwidth as a fraction.
+    unit: "1"
+    gauge:
+      value_type: double
+    attributes: [hw.id, network.io.direction]
+
+  hw.network.io:
+    enabled: true
+    stability: development
+    description: Received and transmitted network traffic in bytes on the Fritz!Box WAN interface.
+    unit: By
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.name, network.io.direction]
+
+  hw.network.packets:
+    enabled: true
+    stability: development
+    description: Received and transmitted network traffic in packets on Fritz!Box interfaces.
+    unit: "{packet}"
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.name, network.io.direction]
+
+  hw.network.up:
+    enabled: true
+    stability: development
+    description: Link status of a Fritz!Box interface (1 = up, 0 = down).
+    unit: "1"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.name]

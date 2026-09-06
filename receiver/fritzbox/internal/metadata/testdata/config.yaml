@@ -1,0 +1,163 @@
+default:
+all_set:
+  metrics:
+    fritzbox.device.uptime:
+      enabled: true
+    fritzbox.dsl.attenuation:
+      enabled: true
+      attributes: ["network.io.direction"]
+    fritzbox.dsl.error_seconds:
+      enabled: true
+      attributes: ["severity"]
+    fritzbox.dsl.noise_margin:
+      enabled: true
+      attributes: ["network.io.direction"]
+    fritzbox.dsl.rate.current:
+      enabled: true
+      attributes: ["network.io.direction"]
+    fritzbox.dsl.rate.max:
+      enabled: true
+      attributes: ["network.io.direction"]
+    fritzbox.hosts.active:
+      enabled: true
+    fritzbox.hosts.total:
+      enabled: true
+    fritzbox.wan.connection.status:
+      enabled: true
+    fritzbox.wan.connection.uptime:
+      enabled: true
+    fritzbox.wan.external_ip:
+      enabled: true
+      attributes: ["external_ip"]
+    fritzbox.wlan.channel:
+      enabled: true
+      attributes: ["hw.id","ssid"]
+    fritzbox.wlan.clients:
+      enabled: true
+      attributes: ["hw.id","ssid"]
+    hw.errors:
+      enabled: true
+      attributes: ["hw.id","error.type","network.io.direction"]
+    hw.network.bandwidth.limit:
+      enabled: true
+      attributes: ["hw.id"]
+    hw.network.bandwidth.utilization:
+      enabled: true
+      attributes: ["hw.id","network.io.direction"]
+    hw.network.io:
+      enabled: true
+      attributes: ["hw.id","hw.name","network.io.direction"]
+    hw.network.packets:
+      enabled: true
+      attributes: ["hw.id","hw.name","network.io.direction"]
+    hw.network.up:
+      enabled: true
+      attributes: ["hw.id","hw.name"]
+reaggregate_set:
+  metrics:
+    fritzbox.device.uptime:
+      enabled: true
+    fritzbox.dsl.attenuation:
+      enabled: true
+      attributes: []
+    fritzbox.dsl.error_seconds:
+      enabled: true
+      attributes: []
+    fritzbox.dsl.noise_margin:
+      enabled: true
+      attributes: []
+    fritzbox.dsl.rate.current:
+      enabled: true
+      attributes: []
+    fritzbox.dsl.rate.max:
+      enabled: true
+      attributes: []
+    fritzbox.hosts.active:
+      enabled: true
+    fritzbox.hosts.total:
+      enabled: true
+    fritzbox.wan.connection.status:
+      enabled: true
+    fritzbox.wan.connection.uptime:
+      enabled: true
+    fritzbox.wan.external_ip:
+      enabled: true
+      attributes: []
+    fritzbox.wlan.channel:
+      enabled: true
+      attributes: []
+    fritzbox.wlan.clients:
+      enabled: true
+      attributes: []
+    hw.errors:
+      enabled: true
+      attributes: []
+    hw.network.bandwidth.limit:
+      enabled: true
+      attributes: []
+    hw.network.bandwidth.utilization:
+      enabled: true
+      attributes: []
+    hw.network.io:
+      enabled: true
+      attributes: []
+    hw.network.packets:
+      enabled: true
+      attributes: []
+    hw.network.up:
+      enabled: true
+      attributes: []
+none_set:
+  metrics:
+    fritzbox.device.uptime:
+      enabled: false
+    fritzbox.dsl.attenuation:
+      enabled: false
+      attributes: ["network.io.direction"]
+    fritzbox.dsl.error_seconds:
+      enabled: false
+      attributes: ["severity"]
+    fritzbox.dsl.noise_margin:
+      enabled: false
+      attributes: ["network.io.direction"]
+    fritzbox.dsl.rate.current:
+      enabled: false
+      attributes: ["network.io.direction"]
+    fritzbox.dsl.rate.max:
+      enabled: false
+      attributes: ["network.io.direction"]
+    fritzbox.hosts.active:
+      enabled: false
+    fritzbox.hosts.total:
+      enabled: false
+    fritzbox.wan.connection.status:
+      enabled: false
+    fritzbox.wan.connection.uptime:
+      enabled: false
+    fritzbox.wan.external_ip:
+      enabled: false
+      attributes: ["external_ip"]
+    fritzbox.wlan.channel:
+      enabled: false
+      attributes: ["hw.id","ssid"]
+    fritzbox.wlan.clients:
+      enabled: false
+      attributes: ["hw.id","ssid"]
+    hw.errors:
+      enabled: false
+      attributes: ["hw.id","error.type","network.io.direction"]
+    hw.network.bandwidth.limit:
+      enabled: false
+      attributes: ["hw.id"]
+    hw.network.bandwidth.utilization:
+      enabled: false
+      attributes: ["hw.id","network.io.direction"]
+    hw.network.io:
+      enabled: false
+      attributes: ["hw.id","hw.name","network.io.direction"]
+    hw.network.packets:
+      enabled: false
+      attributes: ["hw.id","hw.name","network.io.direction"]
+    hw.network.up:
+      enabled: false
+      attributes: ["hw.id","hw.name"]
