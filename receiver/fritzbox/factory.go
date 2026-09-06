@@ -75,7 +75,19 @@ func newTR064Client(cfg *Config) (tr064Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fritzbox: %w", err)
 	}
-	return client, nil
+	return &closeTrackingClient{Client: client, httpClient: httpClient}, nil
+}
+
+// closeTrackingClient wraps the TR-064 client and closes idle HTTP
+// connections on shutdown so no dial goroutines outlive the receiver.
+type closeTrackingClient struct {
+	*tr064.Client
+	httpClient *http.Client
+}
+
+// CloseIdleConnections releases idle keep-alive connections.
+func (c *closeTrackingClient) CloseIdleConnections() {
+	c.httpClient.CloseIdleConnections()
 }
 
 var errNoWANConnectionService = errors.New("no WANIPConnection or WANPPPConnection service found")

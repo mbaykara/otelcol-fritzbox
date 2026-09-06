@@ -33,8 +33,15 @@ func digestAuthorization(challenge, method, uri, username, password string) (str
 	var response, cnonce, nc string
 	qop := params["qop"]
 	if qop != "" {
-		// Fritz!Box offers qop="auth".
-		if !strings.Contains(qop, "auth") {
+		// qop may be a comma-separated list of options (e.g. "auth,auth-int").
+		supported := false
+		for _, opt := range strings.Split(qop, ",") {
+			if strings.TrimSpace(opt) == "auth" {
+				supported = true
+				break
+			}
+		}
+		if !supported {
 			return "", fmt.Errorf("unsupported digest qop %q", qop)
 		}
 		c, err := newCnonce()

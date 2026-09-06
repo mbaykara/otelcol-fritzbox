@@ -78,6 +78,9 @@ func (s *fritzboxScraper) start(ctx context.Context, _ component.Host) error {
 }
 
 func (s *fritzboxScraper) shutdown(_ context.Context) error {
+	if closer, ok := s.client.(interface{ CloseIdleConnections() }); ok {
+		closer.CloseIdleConnections()
+	}
 	return nil
 }
 
