@@ -121,8 +121,15 @@ Source: https://opentelemetry.io/docs/specs/semconv/hardware/network/
   (collector ladder: development → alpha → beta → stable).
 - `hw.network.*` semconv is itself Development stability — names could change
   upstream; accepted risk for standardization.
-- Dependencies pinned to current collector core (`v1.x` / `pdata v1.x` /
-  `v0.14x` line) in go.mod and in the OCB manifest.
+- Dependencies pinned to the **latest stable collector core** at codegen time
+  (`v1.x` / `pdata v1.x` / `v0.14x` line) in go.mod and in the OCB manifest.
+
+### 5.5 Repo hygiene
+
+- Conventional commits, short messages, no AI co-author lines.
+- Open-source-ready: `LICENSE` (Apache-2.0, matching the collector),
+  README with badges (CI, Go reference, license, release).
+- GitHub Actions CI stub: build + `go vet` + tests.
 
 ## 6. Configuration
 
@@ -130,8 +137,8 @@ Source: https://opentelemetry.io/docs/specs/semconv/hardware/network/
 receivers:
   fritzbox:
     endpoint: http://fritz.box:49000     # required
-    username: ${env:FRITZBOX_USERNAME}   # required
-    password: ${env:FRITZBOX_PASSWORD}   # required
+    username: ${env:FRITZBOX_USERNAME}   # optional (see auth model)
+    password: ${env:FRITZBOX_PASSWORD}   # optional (see auth model)
     collection_interval: 30s             # scraperhelper.ControllerConfig
     timeout: 10s
     metrics:                             # mdatagen-generated toggles
@@ -141,16 +148,33 @@ receivers:
 
 `Validate()`:
 - `endpoint` must parse as an absolute URL.
-- `username` and `password` required (box refuses unauthenticated calls).
 - `collection_interval` > 0, `timeout` > 0 and ≤ collection_interval.
+- `username` and `password` must be both set or both empty.
+
+### Auth model (verified against live box)
+
+Auth is **per-service, not global**: e.g. `Hosts.GetHostNumberOfEntries`
+works unauthenticated, while `DeviceInfo.GetInfo` and
+`WANDSLInterfaceConfig.GetInfo` return 401. Therefore credentials are
+optional:
+
+- With credentials: all metric groups collected (digest auth handshake:
+  `WWW-Authenticate: Digest realm=..., algorithm=MD5, qop="auth"` on the 401
+  SOAP response → retry with Authorization header, RFC 7616 MD5).
+- Without credentials: groups that 401 are skipped with a one-time warning
+  log; unauthenticated groups (hosts) still emit.
 
 ## 7. Error handling
 
-- Box unreachable / auth failure → scrape returns error → scraperhelper logs
-  and keeps the collector running; visible via collector self-telemetry
+- Box unreachable → scrape returns error → scraperhelper logs and keeps the
+  collector running; visible via collector self-telemetry
   (`otelcol_receiver_accepted/refused_metric_points`).
-- Per-group failures (e.g. no DSL service on cable boxes, WLAN down) → warn-log
-  once, skip group, emit all other groups.
+- 401 on a metric group → skip group, warn-log **once** per group (not every
+  interval); if credentials are configured this indicates wrong credentials.
+- SOAP fault (`<UPnPError><errorCode>...`) → typed error with code +
+  description; unknown action codes treated as group-unavailable.
+- Per-group failures (e.g. no DSL service on cable boxes, WLAN down) →
+  warn-log once, skip group, emit all other groups.
 - Static resource attributes (model/serial/version) fetched on first
   successful scrape and cached.
 
