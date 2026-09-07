@@ -1,0 +1,42 @@
+# collector-config-e2e.yaml — end-to-end validation config.
+# Scrapes the Fritz!Box and pushes metrics to Grafana Cloud via OTLP/HTTP.
+# Grafana Cloud converts OTLP metric names to Prometheus format automatically
+# (dots become underscores, e.g. fritzbox.device.uptime -> fritzbox_device_uptime).
+#
+# Run with:
+#   FRITZBOX_USERNAME=... FRITZBOX_PASSWORD=... GCOM_TOKEN=glc_... \
+#     ./otelcol-fritzbox --config collector-config-e2e.yaml
+receivers:
+  fritzbox:
+    endpoint: http://192.168.178.1:49000
+    username: ${env:FRITZBOX_USERNAME}
+    password: ${env:FRITZBOX_PASSWORD}
+    collection_interval: 30s
+    timeout: 10s
+    metrics:
+      fritzbox.hosts.active:
+        enabled: true
+
+processors:
+  batch:
+    timeout: 10s
+
+exporters:
+  prometheusremotewrite/grafana-cloud:
+    endpoint: https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push
+    auth:
+      authenticator: basicauth/grafana-cloud
+
+extensions:
+  basicauth/grafana-cloud:
+    client_auth:
+      username: "1823678"
+      password: ${env:GCOM_TOKEN}
+
+service:
+  extensions: [basicauth/grafana-cloud]
+  pipelines:
+    metrics:
+      receivers: [fritzbox]
+      processors: [batch]
+      exporters: [prometheusremotewrite/grafana-cloud]
