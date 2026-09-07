@@ -319,18 +319,18 @@ func (s *fritzboxScraper) scrapeDSL(ctx context.Context, now pcommon.Timestamp, 
 		}
 		return
 	}
-	// Rates are reported in bit/s.
+	// TR-064 reports DSL rates in kbit/s; the metrics use bit/s (UCUM).
 	if v, ok := parseInt(info["NewDownstreamCurrRate"]); ok {
-		s.mb.RecordFritzboxDslRateCurrentDataPoint(now, v, metadata.AttributeNetworkIoDirectionReceive)
+		s.mb.RecordFritzboxDslRateCurrentDataPoint(now, v*1000, metadata.AttributeNetworkIoDirectionReceive)
 	}
 	if v, ok := parseInt(info["NewUpstreamCurrRate"]); ok {
-		s.mb.RecordFritzboxDslRateCurrentDataPoint(now, v, metadata.AttributeNetworkIoDirectionTransmit)
+		s.mb.RecordFritzboxDslRateCurrentDataPoint(now, v*1000, metadata.AttributeNetworkIoDirectionTransmit)
 	}
 	if v, ok := parseInt(info["NewDownstreamMaxRate"]); ok {
-		s.mb.RecordFritzboxDslRateMaxDataPoint(now, v, metadata.AttributeNetworkIoDirectionReceive)
+		s.mb.RecordFritzboxDslRateMaxDataPoint(now, v*1000, metadata.AttributeNetworkIoDirectionReceive)
 	}
 	if v, ok := parseInt(info["NewUpstreamMaxRate"]); ok {
-		s.mb.RecordFritzboxDslRateMaxDataPoint(now, v, metadata.AttributeNetworkIoDirectionTransmit)
+		s.mb.RecordFritzboxDslRateMaxDataPoint(now, v*1000, metadata.AttributeNetworkIoDirectionTransmit)
 	}
 	// Noise margin and attenuation are reported in 0.1 dB units.
 	if v, ok := parseInt(info["NewDownstreamNoiseMargin"]); ok {
