@@ -42,6 +42,7 @@ type Client struct {
 	httpClient *http.Client
 	username   string
 	password   string
+	auth       digestAuth
 }
 
 // NewClient creates a TR-064 client for the device at endpoint
@@ -194,6 +195,7 @@ func (c *Client) CallWithArgs(ctx context.Context, serviceType, controlURL, acti
 	}
 
 	callURL := c.endpoint + controlURL
+	safeURL := stripEndpoint(callURL) // uri used in digest is path+query
 	soapAction := serviceType + "#" + action
 
 	resp, err := c.doCall(ctx, callURL, soapAction, payload, "")
@@ -206,10 +208,10 @@ func (c *Client) CallWithArgs(ctx context.Context, serviceType, controlURL, acti
 	if resp.StatusCode == http.StatusUnauthorized && c.username != "" {
 		challenge := resp.Header.Get("WWW-Authenticate")
 		resp.Body.Close()
-		auth, err := digestAuthorization(challenge, "POST", callURL, c.username, c.password)
-		if err != nil {
+		if err := c.auth.updateChallenge(challenge); err != nil {
 			return nil, fmt.Errorf("tr064: action %s: digest authentication failed: %w", action, err)
 		}
+		auth := c.auth.authorizationFor(http.MethodPost, safeURL, c.username, c.password)
 		resp, err = c.doCall(ctx, callURL, soapAction, payload, auth)
 		if err != nil {
 			return nil, err
@@ -225,11 +227,8 @@ func (c *Client) CallWithArgs(ctx context.Context, serviceType, controlURL, acti
 	if resp.StatusCode == http.StatusUnauthorized {
 		return nil, &Error{Code: http.StatusUnauthorized, Description: "authentication required"}
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("tr064: action %s: unexpected status %s", action, resp.Status)
-	}
-
-	// Distinguish fault from success: faults contain a Fault element.
+	// The Fritz!Box answers action errors with HTTP 500 carrying a SOAP
+	// fault body. Parse that whenever present, regardless of status code.
 	if bytes.Contains(body, []byte(":Fault>")) {
 		var fault soapFaultEnvelope
 		if err := xml.Unmarshal(body, &fault); err != nil {
@@ -240,6 +239,9 @@ func (c *Client) CallWithArgs(ctx context.Context, serviceType, controlURL, acti
 			return nil, &Error{Code: ue.ErrorCode, Description: ue.ErrorDescription}
 		}
 		return nil, fmt.Errorf("tr064: action %s: malformed SOAP fault", action)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("tr064: action %s: unexpected status %s", action, resp.Status)
 	}
 
 	return parseActionResponse(body, action)
@@ -260,6 +262,18 @@ func (c *Client) doCall(ctx context.Context, callURL, soapAction string, payload
 		return nil, fmt.Errorf("tr064: SOAP call %s: %w", soapAction, err)
 	}
 	return resp, nil
+}
+
+// stripEndpoint returns the path component used as the digest uri value.
+func stripEndpoint(callURL string) string {
+	if i := strings.Index(callURL, "://"); i >= 0 {
+		rest := callURL[i+3:]
+		if j := strings.Index(rest, "/"); j >= 0 {
+			return rest[j:]
+		}
+		return "/"
+	}
+	return callURL
 }
 
 // parseActionResponse extracts the out arguments from a successful action

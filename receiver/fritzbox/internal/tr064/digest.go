@@ -6,79 +6,113 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"sync"
 )
 
-// digestAuthorization builds an RFC 7616 MD5 digest Authorization header
-// value from a WWW-Authenticate challenge header. Only the subset of
-// parameters sent by Fritz!Box devices is supported (algorithm=MD5,
-// qop=auth).
-func digestAuthorization(challenge, method, uri, username, password string) (string, error) {
-	if !strings.HasPrefix(challenge, "Digest ") {
-		return "", fmt.Errorf("unsupported authentication scheme in challenge %q", challenge)
-	}
-	params := parseDigestParams(strings.TrimPrefix(challenge, "Digest "))
+// digestAuth holds cached digest challenge parameters and the nonce count.
+// The Fritz!Box enforces nonce-count replay protection: every request must
+// increment nc for the cached nonce, otherwise the box rejects it (usually
+// with a spurious 500 "XML error" soap fault). So the challenge is cached
+// per client and nc is bumped on each authorization header generated.
+type digestAuth struct {
+	mu       sync.Mutex
+	realm    string
+	nonce    string
+	qopAuth  bool
+	cnonce   string
+	nonceCnt int
+}
 
-	realm := params["realm"]
-	nonce := params["nonce"]
-	if realm == "" || nonce == "" {
-		return "", fmt.Errorf("digest challenge missing realm or nonce")
+// authorizationFor builds the Authorization header value for method+uri.
+// The returned bool reports whether digest parameters are available.
+func (d *digestAuth) authorizationFor(method, uri, username, password string) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.realm == "" || d.nonce == "" {
+		return ""
 	}
-	if alg := params["algorithm"]; alg != "" && !strings.EqualFold(alg, "MD5") {
-		return "", fmt.Errorf("unsupported digest algorithm %q", alg)
-	}
+	d.nonceCnt++
+	nc := fmt.Sprintf("%08x", d.nonceCnt)
 
-	ha1 := md5Hex(username + ":" + realm + ":" + password)
+	ha1 := md5Hex(username + ":" + d.realm + ":" + password)
 	ha2 := md5Hex(method + ":" + uri)
-
-	var response, cnonce, nc string
-	qop := params["qop"]
-	if qop != "" {
-		// qop may be a comma-separated list of options (e.g. "auth,auth-int").
-		supported := false
-		for _, opt := range strings.Split(qop, ",") {
-			if strings.TrimSpace(opt) == "auth" {
-				supported = true
-				break
-			}
-		}
-		if !supported {
-			return "", fmt.Errorf("unsupported digest qop %q", qop)
-		}
-		c, err := newCnonce()
-		if err != nil {
-			return "", err
-		}
-		cnonce = c
-		nc = "00000001"
-		response = md5Hex(ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":auth:" + ha2)
+	var response string
+	if d.qopAuth {
+		response = md5Hex(ha1 + ":" + d.nonce + ":" + nc + ":" + d.cnonce + ":auth:" + ha2)
 	} else {
-		response = md5Hex(ha1 + ":" + nonce + ":" + ha2)
+		response = md5Hex(ha1 + ":" + d.nonce + ":" + ha2)
 	}
 
 	var b strings.Builder
 	b.WriteString(`Digest username="`)
 	b.WriteString(username)
 	b.WriteString(`", realm="`)
-	b.WriteString(realm)
+	b.WriteString(d.realm)
 	b.WriteString(`", nonce="`)
-	b.WriteString(nonce)
+	b.WriteString(d.nonce)
 	b.WriteString(`", uri="`)
 	b.WriteString(uri)
 	b.WriteString(`", response="`)
 	b.WriteString(response)
 	b.WriteString(`"`)
-	if qop != "" {
+	if d.qopAuth {
 		b.WriteString(`, qop=auth, nc=`)
 		b.WriteString(nc)
 		b.WriteString(`, cnonce="`)
-		b.WriteString(cnonce)
+		b.WriteString(d.cnonce)
 		b.WriteString(`"`)
 	}
-	return b.String(), nil
+	return b.String()
+}
+
+// updateChallenge parses a WWW-Authenticate digest challenge into d. It
+// resets the nonce count on new nonces. qop="auth" (optionally listed among
+// others) is required when qop is present; MD5 only.
+func (d *digestAuth) updateChallenge(challenge string) error {
+	if !strings.HasPrefix(challenge, "Digest ") {
+		return fmt.Errorf("unsupported authentication scheme in challenge %q", challenge)
+	}
+	params := parseDigestParams(strings.TrimPrefix(challenge, "Digest "))
+
+	realm := params["realm"]
+	nonce := params["nonce"]
+	if realm == "" || nonce == "" {
+		return fmt.Errorf("digest challenge missing realm or nonce")
+	}
+	if alg := params["algorithm"]; alg != "" && !strings.EqualFold(alg, "MD5") {
+		return fmt.Errorf("unsupported digest algorithm %q", alg)
+	}
+	qopAuth := false
+	if qop := params["qop"]; qop != "" {
+		for _, opt := range strings.Split(qop, ",") {
+			if strings.TrimSpace(opt) == "auth" {
+				qopAuth = true
+				break
+			}
+		}
+		if !qopAuth {
+			return fmt.Errorf("unsupported digest qop %q", qop)
+		}
+	}
+
+	c, err := newCnonce()
+	if err != nil {
+		return err
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.nonce != nonce {
+		d.nonceCnt = 0
+	}
+	d.realm = realm
+	d.nonce = nonce
+	d.qopAuth = qopAuth
+	d.cnonce = c
+	return nil
 }
 
 // parseDigestParams parses the comma-separated key=value list of a digest
-// challenge into a map.
+// challenge into a map. Multiple qop tokens are joined by the caller.
 func parseDigestParams(s string) map[string]string {
 	params := map[string]string{}
 	for _, part := range strings.Split(s, ",") {

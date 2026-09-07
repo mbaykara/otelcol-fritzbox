@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -282,6 +283,13 @@ func (s *fritzboxScraper) scrapeWANConnection(ctx context.Context, now pcommon.T
 
 	status, err := s.call(ctx, svc, "GetStatusInfo")
 	if err != nil {
+		// Faulting advertised action or missing service: group disabled,
+		// not a scrape failure. All call paths here are best-effort.
+		var tr064Err *tr064.Error
+		if errors.As(err, &tr064Err) {
+			s.warnOnce("wan-connection-fault", fmt.Sprintf("GetStatusInfo on %s faults (UPnP %d), WAN connection metrics disabled", svc.Type, tr064Err.Code))
+			return
+		}
 		*errs = append(*errs, fmt.Errorf("wan connection status: %w", err))
 		return
 	}
@@ -446,7 +454,9 @@ func (s *fritzboxScraper) scrapeHosts(ctx context.Context, now pcommon.Timestamp
 }
 
 // callGroup resolves a service by prefix and calls an action on it. Missing
-// services produce a warn-once log and a typed error; auth failures likewise.
+// services and actions the device does not actually implement (it may still
+// advertise them in SCPD, then answer with SOAP faults) produce a warn-once
+// log and a typed error so the group is skipped without failing the scrape.
 func (s *fritzboxScraper) callGroup(ctx context.Context, group, servicePrefix, action string) (map[string]string, error) {
 	svc, ok := s.findService(servicePrefix)
 	if !ok {
@@ -456,9 +466,16 @@ func (s *fritzboxScraper) callGroup(ctx context.Context, group, servicePrefix, a
 	resp, err := s.call(ctx, svc, action)
 	if err != nil {
 		var tr064Err *tr064.Error
-		if errors.As(err, &tr064Err) && tr064Err.Code == 401 {
+		// 401: authentication required for this action - skip group.
+		// 5xx/SOAP fault on an advertised action: the box doesn't actually
+		// implement it (observed for WANIPConnection on this box) - skip group.
+		if errors.As(err, &tr064Err) && tr064Err.Code == http.StatusUnauthorized {
 			s.warnOnce(group+"-auth", fmt.Sprintf("action %s on %s requires authentication, metric group %q skipped", action, servicePrefix, group))
 			return nil, err
+		}
+		if errors.As(err, &tr064Err) && tr064Err.Code >= 500 {
+			s.warnOnce(group+"-fault", fmt.Sprintf("action %s on %s answers with SOAP fault %d, metric group %q disabled", action, servicePrefix, tr064Err.Code, group))
+			return nil, errServiceUnavailable{servicePrefix, action}
 		}
 		return nil, fmt.Errorf("fritzbox: %s.%s: %w", servicePrefix, action, err)
 	}
@@ -499,6 +516,13 @@ func (s *fritzboxScraper) warnOnce(key, msg string) {
 type errServiceMissing struct{ service string }
 
 func (e errServiceMissing) Error() string { return "fritzbox: service not offered: " + e.service }
+
+// errServiceUnavailable marks an advertised service whose actions fault.
+type errServiceUnavailable struct{ service, action string }
+
+func (e errServiceUnavailable) Error() string {
+	return "fritzbox: service action unavailable: " + e.service + "." + e.action
+}
 
 func isServiceMissing(err error) bool {
 	var e errServiceMissing
