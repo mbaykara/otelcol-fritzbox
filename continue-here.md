@@ -57,8 +57,8 @@ FRITZBOX_USERNAME=mbaykara FRITZBOX_PASSWORD=... GCOM_TOKEN=glc_... \
 - WAN utilization skipped (auth scope).
 - `fritzbox.wan.external_ip` disabled by default.
 
-## Releases reset (2026-09-07 ~13:30)
-All tags and releases (v0.1.0, v0.1.1, v0.1.2) were deleted; the v0.1.2
-release workflow was cancelled. CHANGELOG.md (Unreleased section) documents
-everything since project start. A proper release will be cut later today —
-when tagging, rename the Unreleased section in CHANGELOG.md first.
+## First public release (2026-09-07 ~14:00)
+v0.1.0 is live: https://github.com/mbaykara/otelcol-fritzbox/releases/tag/v0.1.0
+CI + Release workflows green. Binaries for darwin/linux amd64+arm64 with
+checksums; artifact verification passes (shasum + --version). CHANGELOG.md
+has the 0.1.0 section. Repo is public with description + topics.
