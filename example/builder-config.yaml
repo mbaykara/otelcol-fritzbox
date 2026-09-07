@@ -1,0 +1,18 @@
+dist:
+  name: otelcol-fritzbox
+  description: OpenTelemetry Collector with the Fritz!Box receiver
+  output_path: ./otelcol-fritzbox
+  otelcol_version: v0.160.0
+
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.160.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.160.0
+
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.160.0
+
+receivers:
+  - gomod: github.com/mbaykara/fritzotel-receiver v0.1.0
+    import: github.com/mbaykara/fritzotel-receiver/receiver/fritzbox
+    path: ../
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.160.0

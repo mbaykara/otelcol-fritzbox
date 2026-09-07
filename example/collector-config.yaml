@@ -1,0 +1,21 @@
+receivers:
+  fritzbox:
+    endpoint: http://fritz.box:49000
+    username: ${env:FRITZBOX_USERNAME}
+    password: ${env:FRITZBOX_PASSWORD}
+    collection_interval: 15s
+    timeout: 10s
+
+exporters:
+  debug:
+    verbosity: detailed
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [fritzbox]
+      processors: [batch]
+      exporters: [debug]

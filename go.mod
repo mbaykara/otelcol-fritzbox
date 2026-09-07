@@ -21,6 +21,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
@@ -32,7 +33,11 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/knadh/koanf/maps v0.1.3 // indirect
+	github.com/knadh/koanf/parsers/yaml v1.1.1 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.1 // indirect
+	github.com/knadh/koanf/providers/env/v2 v2.0.1 // indirect
+	github.com/knadh/koanf/providers/file v1.2.1 // indirect
+	github.com/knadh/koanf/providers/fs v1.0.1 // indirect
 	github.com/knadh/koanf/v2 v2.3.6 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -41,6 +46,7 @@ require (
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
+	go.opentelemetry.io/collector/cmd/builder v0.160.0 // indirect
 	go.opentelemetry.io/collector/cmd/mdatagen v0.160.0 // indirect
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.66.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.160.0 // indirect
@@ -71,4 +77,7 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 )
 
-tool go.opentelemetry.io/collector/cmd/mdatagen
+tool (
+	go.opentelemetry.io/collector/cmd/builder
+	go.opentelemetry.io/collector/cmd/mdatagen
+)

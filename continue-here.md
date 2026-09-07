@@ -2,34 +2,40 @@
 
 ## Project
 fritzotel-receiver — custom OTel Collector **metrics receiver** for AVM
-Fritz!Box routers (TR-064 API), importable into any collector via OCB.
+Fritz!Box routers (TR-064 API). Spec: `docs/superpowers/specs/2026-09-07-fritzbox-receiver-design.md`.
 
-## Current state (as of 2026-09-07)
-- Greenfield repo, no code yet.
-- Design **approved** by user; spec at
-  `docs/superpowers/specs/2026-09-07-fritzbox-receiver-design.md`.
-- Next step: implementation (writing-plans skill was the planned next move in
-  the brainstorming flow).
+## Current state (2026-09-07 ~02:05)
+**Receiver fully implemented, unit-tested, OCB-buildable. Awaiting live
+credential test.**
 
-## Key decisions
-- Approach: contrib-style scraper = `mdatagen` + `scraperhelper` + own
-  `internal/tr064` SOAP client (HTTP digest auth, RFC 7616 MD5).
-- Module path: `github.com/mbaykara/fritzotel-receiver` (flat layout, receiver
-  at repo root).
-- Metric contract = MIXED: released `hw.network.*` semconv (io, packets,
-  bandwidth.limit, up, errors w/ `error.type=fec/crc/hec`,
-  bandwidth.utilization) + custom `fritzbox.*` (device/wan/dsl/wlan/hosts).
-- `network.io.direction` = receive/transmit (NOT up/down). `hw.id` synthesized
-  (fritzbox.wan, fritzbox.wlan1..3).
-- Scope: TR-064 only, no Lua API. Metrics only.
-- `mdatagen` + `builder` pinned as Go tool deps (Go 1.27 present).
+- `receiver/fritzbox/` — config.go, factory.go, scraper.go, doc.go,
+  generated mdatagen code (all tests green, vet/gofmt clean).
+- `receiver/fritzbox/internal/tr064/` — SOAP client + RFC 7616 MD5 digest
+  auth; full test coverage incl. digest retry, faults, input args.
+- `example/` — OCB manifest (`builder-config.yaml`) + collector config;
+  `example/otelcol-fritzbox/` binary builds successfully.
+- LICENSE (Apache 2.0), README, CI stub committed.
+- 5 commits on `main`. Git repo local-only (no remote yet).
 
-## Live target
-- Fritz!Box reachable at http://192.168.178.1:49000 (fritz.box), Fritz!OS
-  8.25, HW 226. TR-064 services enumerated; DSL+WLAN+Hosts all present.
-- Credentials: user provides via env `FRITZBOX_USERNAME` / `FRITZBOX_PASSWORD`.
+## What works
+- `go test ./...` all green (scraper + tr064 + generated component tests).
+- OCB build: `cd example && go tool go.opentelemetry.io/collector/cmd/builder
+  --config builder-config.yaml`.
+- Collector starts, receiver runs, discovery/auth errors surface via
+  collector telemetry (verified unauthenticated).
 
-## Open verification items (for implementation)
-- Confirm `fritzbox.dsl.rate.current` unit (bit/s vs kb/s) against box UI.
-- Confirm WLAN instance mapping (1=2.4GHz, 2=5GHz, 3=guest) live.
-- Git: repo not yet initialized — `git init` before first commit.
+## Next step (blocked on user)
+**Live smoke test with credentials:** run the example collector with
+`FRITZBOX_USERNAME` / `FRITZBOX_PASSWORD` env vars set, confirm
+device/DSL/WLAN groups emit, and verify:
+1. `fritzbox.dsl.rate.current` unit (bit/s vs kb/s) against box UI
+2. WLAN instance mapping (1=2.4GHz, 2=5GHz, 3=guest)
+
+Then tag `v0.1.0`.
+
+## Key decisions (from spec)
+- Mixed metric scheme: `hw.network.*` semconv + `fritzbox.*` custom.
+- Module path: `github.com/mbaykara/fritzotel-receiver`, receiver at
+  `receiver/fritzbox` (single module; OCB uses gomod=repo + import=path).
+- Credentials optional (per-service auth); 401 groups skipped w/ warn-once.
+- `mdatagen`+`builder` as Go tool deps.
