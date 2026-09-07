@@ -34,6 +34,11 @@ FRITZBOX_USERNAME=mbaykara FRITZBOX_PASSWORD=... GCOM_TOKEN=glc_... \
   ./otelcol-fritzbox/otelcol-fritzbox --config collector-config-e2e.yaml
 ```
 
+## Device table (added 2026-09-07 ~11:12)
+- Metric: fritzbox.hosts.info (gauge=1 per host, attrs hostname/ip/mac/interface_type/active/guest/friendly_name).
+- Source: X_AVM-DE_GetHostListPath -> /devicehostlist.lua?sid=... (single call, ~73 hosts).
+- Dashboard panel 15 "Connected Devices" (table, sorted Active desc) validated via gcx snapshot.
+
 ## Known limitations
 - WAN connection status/uptime unavailable on this box (TR-064 service
   advertised but faults).
