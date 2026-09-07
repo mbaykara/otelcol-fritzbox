@@ -1,44 +1,41 @@
 # continue-here
 
 ## Project
-fritzotel-receiver — OTel Collector **metrics receiver** for AVM Fritz!Box
-routers (TR-064 API). Spec: `docs/superpowers/specs/2026-09-07-fritzbox-receiver-design.md`.
+fritzotel-receiver — OTel Collector metrics receiver for AVM Fritz!Box
+routers (TR-064). Spec: `docs/superpowers/specs/2026-09-07-fritzbox-receiver-design.md`.
 
-## Current state (2026-09-07 ~09:10)
-**DONE and verified live. Tagged `v0.1.0`.**
+## Current state (2026-09-07 ~09:35)
+**E2E validated: receiver -> collector -> Grafana Cloud -> dashboard.**
 
-- Full receiver: `receiver/fritzbox/` (config, factory, scraper, mdatagen).
-- TR-064 client: `internal/tr064/` — SOAP + RFC 7616 digest with
-  **nc-progression** (Fritz!Box enforces replay protection) and fault parsing
-  that handles HTTP-500-wrapped SOAP faults.
-- All unit tests green; vet/gofmt clean on our code.
-- OCB example builds and runs against the live box (Fritz!OS 8.25, VDSL):
-  15 metrics, 40 datapoints, 0 scrape errors.
-- Password file `/var/folders/.../T/opencode/fritzbox_pw` deleted.
-- Git: 8 commits + tag `v0.1.0` on `main`, no remote configured.
+- Receiver: complete, unit-tested, tagged `v0.1.0`.
+- Live verified against Fritz!Box 7590 (Fritz!OS 8.25, VDSL).
+- Metrics flowing to Grafana Cloud stack `baykara` (prod-eu-west-2).
+- Dashboard `fritzbox-network` created and validated: **15/15 panel queries
+  return data**.
+- Grafana Cloud naming: dots->underscores + unit suffixes
+  (`fritzbox_dsl_rate_current_bit_per_second`, `hw_network_io_bytes_total`,
+  `hw_network_up_ratio`, ...).
+- gcx context `baykara` created (OAuth), prometheus remote_write used
+  (OTLP gateway returned 401 with that token).
 
-## Live verification results
-- DSL rates are **kbit/s from TR-064 → converted to bit/s** (UCUM) in the
-  receiver. Verified against Fritz UI values.
-- WLAN mapping confirmed: wlan1=2.4GHz, wlan2=5GHz, wlan3=guest (SSID attr
-  distinguishes them).
-- WANIPConnection service faults on this box (UPnP 401/502) → group is
-  skipped with warn-once, not a scrape failure. `fritzbox.wan.connection.*`
-  and `fritzbox.wan.external_ip` are therefore absent on this box; they work
-  on boxes where the service is functional.
+## Repo layout
+- `receiver/fritzbox/` — receiver code + generated mdatagen + tests.
+- `receiver/fritzbox/internal/tr064/` — SOAP/digest client + tests.
+- `example/` — OCB builder-config + collector configs (dev + e2e).
+- `dashboard/fritzbox-network.json` — raw Grafana JSON.
+- `dashboard/fritzbox-network-k8s.json` — K8s manifest (what gcx created).
 
-## Known limitations / next ideas
-- `hw.network.bandwidth.utilization` skipped: the AVM action
-  `X_AVM-DE_GetCommonLinkProperties` requires a permission scope this user
-  lacks (UPnP 401).
-- `fritzbox.hosts.active` iterates N hosts (one SOAP call each) — off by
-  default, enabled in example config.
-- No remote yet: `git remote add origin ...` when publishing.
-
-## Usage
+## To re-run e2e
 ```sh
 cd example
 go tool go.opentelemetry.io/collector/cmd/builder --config builder-config.yaml
-FRITZBOX_USERNAME=... FRITZBOX_PASSWORD=... \
-  ./otelcol-fritzbox/otelcol-fritzbox --config collector-config.yaml
+# needs: FRITZBOX_PASSWORD and GCOM_TOKEN files in $TMPDIR/opencode/
+FRITZBOX_USERNAME=mbaykara FRITZBOX_PASSWORD=... GCOM_TOKEN=glc_... \
+  ./otelcol-fritzbox/otelcol-fritzbox --config collector-config-e2e.yaml
 ```
+
+## Known limitations
+- WAN connection status/uptime unavailable on this box (TR-064 service
+  advertised but faults).
+- WAN utilization skipped (auth scope).
+- `fritzbox.wan.external_ip` disabled by default.
