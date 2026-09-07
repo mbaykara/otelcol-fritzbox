@@ -729,6 +729,88 @@
             "version": "v10.1.0"
           }
         }
+      },
+      "panel-15": {
+        "kind": "Panel",
+        "spec": {
+          "id": 15,
+          "title": "Connected Devices",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "fritzbox_hosts_info_ratio",
+                        "instant": true,
+                        "format": "table"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "Time": true,
+                        "Value": true,
+                        "__name__": true,
+                        "otel_scope_name": true
+                      },
+                      "renameByName": {
+                        "hostname": "Name",
+                        "friendly_name": "Friendly Name",
+                        "ip": "IP",
+                        "mac": "MAC",
+                        "interface_type": "Interface",
+                        "active": "Active",
+                        "guest": "Guest"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "displayName": "Active",
+                    "desc": true
+                  }
+                ]
+              }
+            },
+            "version": "v10.1.0"
+          }
+        }
       }
     },
     "timeSettings": {
@@ -924,6 +1006,19 @@
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-14"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 36,
+              "width": 24,
+              "height": 10,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-15"
               }
             }
           }
