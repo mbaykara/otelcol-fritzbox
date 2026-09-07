@@ -22,15 +22,15 @@ processors:
     timeout: 10s
 
 exporters:
-  prometheusremotewrite/grafana-cloud:
-    endpoint: https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push
+  otlphttp/grafana-cloud:
+    endpoint: https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
     auth:
       authenticator: basicauth/grafana-cloud
 
 extensions:
   basicauth/grafana-cloud:
     client_auth:
-      username: "1823678"
+      username: "1053345"
       password: ${env:GCOM_TOKEN}
 
 service:
@@ -39,4 +39,4 @@ service:
     metrics:
       receivers: [fritzbox]
       processors: [batch]
-      exporters: [prometheusremotewrite/grafana-cloud]
+      exporters: [otlphttp/grafana-cloud]
