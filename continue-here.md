@@ -1,41 +1,44 @@
 # continue-here
 
 ## Project
-fritzotel-receiver — custom OTel Collector **metrics receiver** for AVM
-Fritz!Box routers (TR-064 API). Spec: `docs/superpowers/specs/2026-09-07-fritzbox-receiver-design.md`.
+fritzotel-receiver — OTel Collector **metrics receiver** for AVM Fritz!Box
+routers (TR-064 API). Spec: `docs/superpowers/specs/2026-09-07-fritzbox-receiver-design.md`.
 
-## Current state (2026-09-07 ~02:05)
-**Receiver fully implemented, unit-tested, OCB-buildable. Awaiting live
-credential test.**
+## Current state (2026-09-07 ~09:10)
+**DONE and verified live. Tagged `v0.1.0`.**
 
-- `receiver/fritzbox/` — config.go, factory.go, scraper.go, doc.go,
-  generated mdatagen code (all tests green, vet/gofmt clean).
-- `receiver/fritzbox/internal/tr064/` — SOAP client + RFC 7616 MD5 digest
-  auth; full test coverage incl. digest retry, faults, input args.
-- `example/` — OCB manifest (`builder-config.yaml`) + collector config;
-  `example/otelcol-fritzbox/` binary builds successfully.
-- LICENSE (Apache 2.0), README, CI stub committed.
-- 5 commits on `main`. Git repo local-only (no remote yet).
+- Full receiver: `receiver/fritzbox/` (config, factory, scraper, mdatagen).
+- TR-064 client: `internal/tr064/` — SOAP + RFC 7616 digest with
+  **nc-progression** (Fritz!Box enforces replay protection) and fault parsing
+  that handles HTTP-500-wrapped SOAP faults.
+- All unit tests green; vet/gofmt clean on our code.
+- OCB example builds and runs against the live box (Fritz!OS 8.25, VDSL):
+  15 metrics, 40 datapoints, 0 scrape errors.
+- Password file `/var/folders/.../T/opencode/fritzbox_pw` deleted.
+- Git: 8 commits + tag `v0.1.0` on `main`, no remote configured.
 
-## What works
-- `go test ./...` all green (scraper + tr064 + generated component tests).
-- OCB build: `cd example && go tool go.opentelemetry.io/collector/cmd/builder
-  --config builder-config.yaml`.
-- Collector starts, receiver runs, discovery/auth errors surface via
-  collector telemetry (verified unauthenticated).
+## Live verification results
+- DSL rates are **kbit/s from TR-064 → converted to bit/s** (UCUM) in the
+  receiver. Verified against Fritz UI values.
+- WLAN mapping confirmed: wlan1=2.4GHz, wlan2=5GHz, wlan3=guest (SSID attr
+  distinguishes them).
+- WANIPConnection service faults on this box (UPnP 401/502) → group is
+  skipped with warn-once, not a scrape failure. `fritzbox.wan.connection.*`
+  and `fritzbox.wan.external_ip` are therefore absent on this box; they work
+  on boxes where the service is functional.
 
-## Next step (blocked on user)
-**Live smoke test with credentials:** run the example collector with
-`FRITZBOX_USERNAME` / `FRITZBOX_PASSWORD` env vars set, confirm
-device/DSL/WLAN groups emit, and verify:
-1. `fritzbox.dsl.rate.current` unit (bit/s vs kb/s) against box UI
-2. WLAN instance mapping (1=2.4GHz, 2=5GHz, 3=guest)
+## Known limitations / next ideas
+- `hw.network.bandwidth.utilization` skipped: the AVM action
+  `X_AVM-DE_GetCommonLinkProperties` requires a permission scope this user
+  lacks (UPnP 401).
+- `fritzbox.hosts.active` iterates N hosts (one SOAP call each) — off by
+  default, enabled in example config.
+- No remote yet: `git remote add origin ...` when publishing.
 
-Then tag `v0.1.0`.
-
-## Key decisions (from spec)
-- Mixed metric scheme: `hw.network.*` semconv + `fritzbox.*` custom.
-- Module path: `github.com/mbaykara/fritzotel-receiver`, receiver at
-  `receiver/fritzbox` (single module; OCB uses gomod=repo + import=path).
-- Credentials optional (per-service auth); 401 groups skipped w/ warn-once.
-- `mdatagen`+`builder` as Go tool deps.
+## Usage
+```sh
+cd example
+go tool go.opentelemetry.io/collector/cmd/builder --config builder-config.yaml
+FRITZBOX_USERNAME=... FRITZBOX_PASSWORD=... \
+  ./otelcol-fritzbox/otelcol-fritzbox --config collector-config.yaml
+```
