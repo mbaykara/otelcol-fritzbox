@@ -1,7 +1,7 @@
 # continue-here
 
 ## Project
-fritzotel-receiver — OTel Collector metrics receiver for AVM Fritz!Box
+otelcol-fritzbox — OTel Collector metrics receiver for AVM Fritz!Box
 routers (TR-064). Spec: `docs/superpowers/specs/2026-09-07-fritzbox-receiver-design.md`.
 
 ## Current state (2026-09-07 ~09:35)

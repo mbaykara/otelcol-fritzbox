@@ -1,4 +1,4 @@
-module github.com/mbaykara/fritzotel-receiver
+module github.com/mbaykara/otelcol-fritzbox
 
 go 1.27.0
 

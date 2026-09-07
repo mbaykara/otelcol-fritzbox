@@ -32,10 +32,10 @@ prove the data is available; this project is the native OTel equivalent.
 
 ## 3. Repository layout
 
-Module path: `github.com/mbaykara/fritzotel-receiver`
+Module path: `github.com/mbaykara/otelcol-fritzbox`
 
 ```
-fritzotel-receiver/
+otelcol-fritzbox/
 ├── go.mod / go.sum
 ├── metadata.yaml            # metric contract -> mdatagen input
 ├── config.go                # Config + Validate()

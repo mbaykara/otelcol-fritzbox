@@ -17,7 +17,7 @@ processors:
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.160.0
 
 receivers:
-  - gomod: github.com/mbaykara/fritzotel-receiver v0.1.0
-    import: github.com/mbaykara/fritzotel-receiver/receiver/fritzbox
+  - gomod: github.com/mbaykara/otelcol-fritzbox v0.1.0
+    import: github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox
     path: ../
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.160.0

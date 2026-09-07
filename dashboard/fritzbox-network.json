@@ -1,7 +1,7 @@
 {
   "title": "Fritz!Box Network Overview",
   "uid": "fritzbox-network",
-  "description": "Fritz!Box metrics via the fritzbox OpenTelemetry receiver (TR-064). Source: https://github.com/mbaykara/fritzotel-receiver",
+  "description": "Fritz!Box metrics via the fritzbox OpenTelemetry receiver (TR-064). Source: https://github.com/mbaykara/otelcol-fritzbox",
   "tags": [
     "fritzbox",
     "tr064",

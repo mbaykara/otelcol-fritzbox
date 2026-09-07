@@ -8,7 +8,7 @@ import (
 
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
-	"github.com/mbaykara/fritzotel-receiver/receiver/fritzbox/internal/metadata"
+	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/metadata"
 )
 
 // Config represents the receiver config settings in the Collector config.yaml.

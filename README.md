@@ -1,7 +1,7 @@
-# fritzotel-receiver
+# otelcol-fritzbox
 
-[![CI](https://github.com/mbaykara/fritzotel-receiver/actions/workflows/ci.yml/badge.svg)](https://github.com/mbaykara/fritzotel-receiver/actions/workflows/ci.yml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/mbaykara/fritzotel-receiver.svg)](https://pkg.go.dev/github.com/mbaykara/fritzotel-receiver)
+[![CI](https://github.com/mbaykara/otelcol-fritzbox/actions/workflows/ci.yml/badge.svg)](https://github.com/mbaykara/otelcol-fritzbox/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/mbaykara/otelcol-fritzbox.svg)](https://pkg.go.dev/github.com/mbaykara/otelcol-fritzbox)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 An [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) metrics
@@ -72,7 +72,7 @@ Add the receiver to your
 
 ```yaml
 receivers:
-  - gomod: github.com/mbaykara/fritzotel-receiver/receiver/fritzbox v0.1.0
+  - gomod: github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox v0.1.0
 ```
 
 Then wire it into a metrics pipeline:

@@ -10,7 +10,7 @@ import (
 
 var (
 	Type      = component.MustNewType("fritzbox")
-	ScopeName = "github.com/mbaykara/fritzotel-receiver/receiver/fritzbox"
+	ScopeName = "github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox"
 )
 
 const (

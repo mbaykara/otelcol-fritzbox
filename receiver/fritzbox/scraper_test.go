@@ -11,8 +11,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
-	"github.com/mbaykara/fritzotel-receiver/receiver/fritzbox/internal/metadata"
-	"github.com/mbaykara/fritzotel-receiver/receiver/fritzbox/internal/tr064"
+	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/metadata"
+	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/tr064"
 )
 
 // fakeTR064 is a scripted TR-064 client. Responses are keyed by

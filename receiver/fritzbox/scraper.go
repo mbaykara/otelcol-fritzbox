@@ -16,8 +16,8 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
 
-	"github.com/mbaykara/fritzotel-receiver/receiver/fritzbox/internal/metadata"
-	"github.com/mbaykara/fritzotel-receiver/receiver/fritzbox/internal/tr064"
+	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/metadata"
+	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/tr064"
 )
 
 // TR-064 service URN prefixes, without the version suffix.
