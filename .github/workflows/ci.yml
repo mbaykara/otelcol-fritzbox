@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,15 +15,28 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: gofmt check
+        run: |
+          unformatted=$(gofmt -s -l receiver/ cmd/)
+          if [ -n "$unformatted" ]; then
+            echo "Files not gofmt-formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+
       - name: go vet
         run: go vet ./...
 
-      - name: gofmt check
+      - name: mdatagen freshness
         run: |
-          if [ -n "$(gofmt -l .)" ]; then
-            gofmt -l .
+          go tool go.opentelemetry.io/collector/cmd/mdatagen receiver/fritzbox/metadata.yaml
+          if ! git diff --exit-code -- receiver/fritzbox/internal/metadata receiver/fritzbox/generated_component_test.go receiver/fritzbox/generated_package_test.go receiver/fritzbox/documentation.md; then
+            echo "Generated files are stale. Run 'go generate ./receiver/...' and commit the result."
             exit 1
           fi
 
       - name: go test
         run: go test ./...
+
+      - name: build collector binary
+        run: go build ./cmd/otelcol-fritzbox

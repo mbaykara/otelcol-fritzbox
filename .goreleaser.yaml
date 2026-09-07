@@ -1,0 +1,47 @@
+# GoReleaser configuration for the otelcol-fritzbox collector distribution.
+# https://goreleaser.com
+version: 2
+
+project_name: otelcol-fritzbox
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: otelcol-fritzbox
+    main: ./cmd/otelcol-fritzbox
+    binary: otelcol-fritzbox
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+      - "^test:"
+
+release:
+  github:
+    owner: mbaykara
+    name: otelcol-fritzbox
+  draft: false
+  prerelease: auto

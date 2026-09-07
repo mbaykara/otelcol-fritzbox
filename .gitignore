@@ -1,3 +1,4 @@
 example/otelcol-fritzbox/
 otelcol-fritzbox/
 *.test
+dist/
