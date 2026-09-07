@@ -121,6 +121,26 @@ func collectServices(d device, out *[]Service) {
 	}
 }
 
+// FetchURL fetches an arbitrary path from the device (e.g. the host list
+// path returned by X_AVM-DE_GetHostListPath). The session id embedded in the
+// path by the device authenticates the request, so no digest auth is needed.
+func (c *Client) FetchURL(ctx context.Context, path string) ([]byte, error) {
+	url := c.endpoint + path
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("tr064: building fetch request for %s: %w", path, err)
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("tr064: fetching %s: %w", path, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("tr064: fetching %s: unexpected status %s", path, resp.Status)
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+}
+
 // soapEnvelope is the request envelope. The action element is rendered
 // manually so that optional input arguments can be nested inside it.
 type soapEnvelope struct {

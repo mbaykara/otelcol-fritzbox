@@ -63,6 +63,7 @@ type tr064Client interface {
 	Services(ctx context.Context) ([]tr064.Service, error)
 	Call(ctx context.Context, serviceType, controlURL, action string) (map[string]string, error)
 	CallWithArgs(ctx context.Context, serviceType, controlURL, action string, args map[string]string) (map[string]string, error)
+	FetchURL(ctx context.Context, path string) ([]byte, error)
 }
 
 // newTR064Client builds the real TR-064 client from config.

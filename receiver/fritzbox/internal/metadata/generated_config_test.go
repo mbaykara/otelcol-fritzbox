@@ -57,6 +57,11 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					FritzboxHostsActive: FritzboxHostsActiveMetricConfig{
 						Enabled: true,
 					},
+					FritzboxHostsInfo: FritzboxHostsInfoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []FritzboxHostsInfoMetricAttributeKey{FritzboxHostsInfoMetricAttributeKeyHostname, FritzboxHostsInfoMetricAttributeKeyIP, FritzboxHostsInfoMetricAttributeKeyMac, FritzboxHostsInfoMetricAttributeKeyInterfaceType, FritzboxHostsInfoMetricAttributeKeyActive, FritzboxHostsInfoMetricAttributeKeyGuest, FritzboxHostsInfoMetricAttributeKeyFriendlyName},
+					},
 					FritzboxHostsTotal: FritzboxHostsTotalMetricConfig{
 						Enabled: true,
 					},
@@ -149,6 +154,11 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					FritzboxHostsActive: FritzboxHostsActiveMetricConfig{
 						Enabled: false,
 					},
+					FritzboxHostsInfo: FritzboxHostsInfoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []FritzboxHostsInfoMetricAttributeKey{FritzboxHostsInfoMetricAttributeKeyHostname, FritzboxHostsInfoMetricAttributeKeyIP, FritzboxHostsInfoMetricAttributeKeyMac, FritzboxHostsInfoMetricAttributeKeyInterfaceType, FritzboxHostsInfoMetricAttributeKeyActive, FritzboxHostsInfoMetricAttributeKeyGuest, FritzboxHostsInfoMetricAttributeKeyFriendlyName},
+					},
 					FritzboxHostsTotal: FritzboxHostsTotalMetricConfig{
 						Enabled: false,
 					},
@@ -210,7 +220,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(FritzboxDeviceUptimeMetricConfig{}, FritzboxDslAttenuationMetricConfig{}, FritzboxDslErrorSecondsMetricConfig{}, FritzboxDslNoiseMarginMetricConfig{}, FritzboxDslRateCurrentMetricConfig{}, FritzboxDslRateMaxMetricConfig{}, FritzboxHostsActiveMetricConfig{}, FritzboxHostsTotalMetricConfig{}, FritzboxWanConnectionStatusMetricConfig{}, FritzboxWanConnectionUptimeMetricConfig{}, FritzboxWanExternalIPMetricConfig{}, FritzboxWlanChannelMetricConfig{}, FritzboxWlanClientsMetricConfig{}, HwErrorsMetricConfig{}, HwNetworkBandwidthLimitMetricConfig{}, HwNetworkBandwidthUtilizationMetricConfig{}, HwNetworkIoMetricConfig{}, HwNetworkPacketsMetricConfig{}, HwNetworkUpMetricConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(FritzboxDeviceUptimeMetricConfig{}, FritzboxDslAttenuationMetricConfig{}, FritzboxDslErrorSecondsMetricConfig{}, FritzboxDslNoiseMarginMetricConfig{}, FritzboxDslRateCurrentMetricConfig{}, FritzboxDslRateMaxMetricConfig{}, FritzboxHostsActiveMetricConfig{}, FritzboxHostsInfoMetricConfig{}, FritzboxHostsTotalMetricConfig{}, FritzboxWanConnectionStatusMetricConfig{}, FritzboxWanConnectionUptimeMetricConfig{}, FritzboxWanExternalIPMetricConfig{}, FritzboxWlanChannelMetricConfig{}, FritzboxWlanClientsMetricConfig{}, HwErrorsMetricConfig{}, HwNetworkBandwidthLimitMetricConfig{}, HwNetworkBandwidthUtilizationMetricConfig{}, HwNetworkIoMetricConfig{}, HwNetworkPacketsMetricConfig{}, HwNetworkUpMetricConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
@@ -272,6 +282,18 @@ func TestFritzboxDslRateMaxMetricsConfig_Validate(t *testing.T) {
 	require.ErrorContains(t, cfg.Validate(), "metric fritzbox.dsl.rate.max doesn't have an attribute invalid, valid attributes: [network.io.direction]")
 
 	cfg = DefaultMetricsConfig().FritzboxDslRateMax
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestFritzboxHostsInfoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().FritzboxHostsInfo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []FritzboxHostsInfoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric fritzbox.hosts.info doesn't have an attribute invalid, valid attributes: [hostname, ip, mac, interface_type, active, guest, friendly_name]")
+
+	cfg = DefaultMetricsConfig().FritzboxHostsInfo
 	cfg.AggregationStrategy = "invalid"
 	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
 }

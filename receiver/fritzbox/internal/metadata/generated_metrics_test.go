@@ -63,6 +63,7 @@ func TestMetricsBuilder(t *testing.T) {
 			aggMap["fritzbox.dsl.noise_margin"] = mb.metricFritzboxDslNoiseMargin.config.AggregationStrategy
 			aggMap["fritzbox.dsl.rate.current"] = mb.metricFritzboxDslRateCurrent.config.AggregationStrategy
 			aggMap["fritzbox.dsl.rate.max"] = mb.metricFritzboxDslRateMax.config.AggregationStrategy
+			aggMap["fritzbox.hosts.info"] = mb.metricFritzboxHostsInfo.config.AggregationStrategy
 			aggMap["fritzbox.wan.external_ip"] = mb.metricFritzboxWanExternalIP.config.AggregationStrategy
 			aggMap["fritzbox.wlan.channel"] = mb.metricFritzboxWlanChannel.config.AggregationStrategy
 			aggMap["fritzbox.wlan.clients"] = mb.metricFritzboxWlanClients.config.AggregationStrategy
@@ -116,6 +117,12 @@ func TestMetricsBuilder(t *testing.T) {
 
 			allMetricsCount++
 			mb.RecordFritzboxHostsActiveDataPoint(ts, 1)
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordFritzboxHostsInfoDataPoint(ts, 1, "hostname-val", "ip-val", "mac-val", "interface_type-val", "active-val", "guest-val", "friendly_name-val")
+			if tt.name == "reaggregate_set" {
+				mb.RecordFritzboxHostsInfoDataPoint(ts, 3, "hostname-val-2", "ip-val-2", "mac-val-2", "interface_type-val-2", "active-val-2", "guest-val-2", "friendly_name-val-2")
+			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordFritzboxHostsTotalDataPoint(ts, 1)
@@ -188,6 +195,7 @@ func TestMetricsBuilder(t *testing.T) {
 				assert.Empty(t, mb.metricFritzboxDslNoiseMargin.aggDataPoints)
 				assert.Empty(t, mb.metricFritzboxDslRateCurrent.aggDataPoints)
 				assert.Empty(t, mb.metricFritzboxDslRateMax.aggDataPoints)
+				assert.Empty(t, mb.metricFritzboxHostsInfo.aggDataPoints)
 				assert.Empty(t, mb.metricFritzboxWanExternalIP.aggDataPoints)
 				assert.Empty(t, mb.metricFritzboxWlanChannel.aggDataPoints)
 				assert.Empty(t, mb.metricFritzboxWlanClients.aggDataPoints)
@@ -452,6 +460,76 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
+				case "fritzbox.hosts.info":
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["fritzbox.hosts.info"], "Found a duplicate in the metrics slice: fritzbox.hosts.info")
+						validatedMetrics["fritzbox.hosts.info"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "One series per known host; value is always 1, attributes carry the device identity.", mi.Description())
+						assert.Equal(t, "1", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						hostnameAttrVal, ok := dp.Attributes().Get("hostname")
+						assert.True(t, ok)
+						assert.Equal(t, "hostname-val", hostnameAttrVal.Str())
+						ipAttrVal, ok := dp.Attributes().Get("ip")
+						assert.True(t, ok)
+						assert.Equal(t, "ip-val", ipAttrVal.Str())
+						macAttrVal, ok := dp.Attributes().Get("mac")
+						assert.True(t, ok)
+						assert.Equal(t, "mac-val", macAttrVal.Str())
+						interfaceTypeAttrVal, ok := dp.Attributes().Get("interface_type")
+						assert.True(t, ok)
+						assert.Equal(t, "interface_type-val", interfaceTypeAttrVal.Str())
+						activeAttrVal, ok := dp.Attributes().Get("active")
+						assert.True(t, ok)
+						assert.Equal(t, "active-val", activeAttrVal.Str())
+						guestAttrVal, ok := dp.Attributes().Get("guest")
+						assert.True(t, ok)
+						assert.Equal(t, "guest-val", guestAttrVal.Str())
+						friendlyNameAttrVal, ok := dp.Attributes().Get("friendly_name")
+						assert.True(t, ok)
+						assert.Equal(t, "friendly_name-val", friendlyNameAttrVal.Str())
+					} else {
+						assert.False(t, validatedMetrics["fritzbox.hosts.info"], "Found a duplicate in the metrics slice: fritzbox.hosts.info")
+						validatedMetrics["fritzbox.hosts.info"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "One series per known host; value is always 1, attributes carry the device identity.", mi.Description())
+						assert.Equal(t, "1", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["fritzbox.hosts.info"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("hostname")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ip")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("mac")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("interface_type")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("active")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("guest")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("friendly_name")
+						assert.False(t, ok)
+					}
 				case "fritzbox.hosts.total":
 					assert.False(t, validatedMetrics["fritzbox.hosts.total"], "Found a duplicate in the metrics slice: fritzbox.hosts.total")
 					validatedMetrics["fritzbox.hosts.total"] = true

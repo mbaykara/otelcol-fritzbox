@@ -20,6 +20,9 @@ all_set:
       attributes: ["network.io.direction"]
     fritzbox.hosts.active:
       enabled: true
+    fritzbox.hosts.info:
+      enabled: true
+      attributes: ["hostname","ip","mac","interface_type","active","guest","friendly_name"]
     fritzbox.hosts.total:
       enabled: true
     fritzbox.wan.connection.status:
@@ -74,6 +77,9 @@ reaggregate_set:
       attributes: []
     fritzbox.hosts.active:
       enabled: true
+    fritzbox.hosts.info:
+      enabled: true
+      attributes: []
     fritzbox.hosts.total:
       enabled: true
     fritzbox.wan.connection.status:
@@ -128,6 +134,9 @@ none_set:
       attributes: ["network.io.direction"]
     fritzbox.hosts.active:
       enabled: false
+    fritzbox.hosts.info:
+      enabled: false
+      attributes: ["hostname","ip","mac","interface_type","active","guest","friendly_name"]
     fritzbox.hosts.total:
       enabled: false
     fritzbox.wan.connection.status:

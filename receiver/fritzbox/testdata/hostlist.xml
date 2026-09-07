@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<List>
+<Item>
+<Index>1</Index>
+<IPAddress>192.168.178.20</IPAddress>
+<MACAddress>AA:BB:CC:DD:EE:FF</MACAddress>
+<Active>1</Active>
+<HostName>living-room-tv</HostName>
+<InterfaceType>802.11</InterfaceType>
+<X_AVM-DE_Guest>0</X_AVM-DE_Guest>
+<X_AVM-DE_FriendlyName>Living Room TV</X_AVM-DE_FriendlyName>
+</Item>
+<Item>
+<Index>2</Index>
+<IPAddress>192.168.178.42</IPAddress>
+<MACAddress>11:22:33:44:55:66</MACAddress>
+<Active>0</Active>
+<HostName>old-phone</HostName>
+<InterfaceType>802.11</InterfaceType>
+<X_AVM-DE_Guest>1</X_AVM-DE_Guest>
+<X_AVM-DE_FriendlyName>Old Phone</X_AVM-DE_FriendlyName>
+</Item>
+<Item>
+<Index>3</Index>
+<IPAddress></IPAddress>
+<MACAddress>77:88:99:AA:BB:CC</MACAddress>
+<Active>0</Active>
+<HostName></HostName>
+<InterfaceType>LAN</InterfaceType>
+<X_AVM-DE_Guest>0</X_AVM-DE_Guest>
+<X_AVM-DE_FriendlyName></X_AVM-DE_FriendlyName>
+</Item>
+</List>

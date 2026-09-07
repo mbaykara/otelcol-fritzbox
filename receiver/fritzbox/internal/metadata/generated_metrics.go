@@ -127,6 +127,10 @@ var MetricsInfo = metricsInfo{
 	FritzboxHostsActive: metricInfo{
 		Name: "fritzbox.hosts.active",
 	},
+	FritzboxHostsInfo: metricInfo{
+		Name:       "fritzbox.hosts.info",
+		Attributes: []string{"hostname", "ip", "mac", "interface_type", "active", "guest", "friendly_name"},
+	},
 	FritzboxHostsTotal: metricInfo{
 		Name: "fritzbox.hosts.total",
 	},
@@ -182,6 +186,7 @@ type metricsInfo struct {
 	FritzboxDslRateCurrent        metricInfo
 	FritzboxDslRateMax            metricInfo
 	FritzboxHostsActive           metricInfo
+	FritzboxHostsInfo             metricInfo
 	FritzboxHostsTotal            metricInfo
 	FritzboxWanConnectionStatus   metricInfo
 	FritzboxWanConnectionUptime   metricInfo
@@ -740,6 +745,113 @@ func (m *metricFritzboxHostsActive) emit(metrics pmetric.MetricSlice) {
 
 func newMetricFritzboxHostsActive(cfg FritzboxHostsActiveMetricConfig) metricFritzboxHostsActive {
 	m := metricFritzboxHostsActive{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricFritzboxHostsInfo struct {
+	data          pmetric.Metric                // data buffer for generated metric.
+	config        FritzboxHostsInfoMetricConfig // metric config provided by user.
+	capacity      int                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                       // slice containing number of aggregated datapoints at each index
+}
+
+// init fills fritzbox.hosts.info metric with initial data.
+func (m *metricFritzboxHostsInfo) init() {
+	m.data.SetName("fritzbox.hosts.info")
+	m.data.SetDescription("One series per known host; value is always 1, attributes carry the device identity.")
+	m.data.SetUnit("1")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
+}
+
+func (m *metricFritzboxHostsInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hostnameAttributeValue string, ipAttributeValue string, macAttributeValue string, interfaceTypeAttributeValue string, activeAttributeValue string, guestAttributeValue string, friendlyNameAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+
+	dp := pmetric.NewNumberDataPoint()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, FritzboxHostsInfoMetricAttributeKeyHostname) {
+		dp.Attributes().PutStr("hostname", hostnameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, FritzboxHostsInfoMetricAttributeKeyIP) {
+		dp.Attributes().PutStr("ip", ipAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, FritzboxHostsInfoMetricAttributeKeyMac) {
+		dp.Attributes().PutStr("mac", macAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, FritzboxHostsInfoMetricAttributeKeyInterfaceType) {
+		dp.Attributes().PutStr("interface_type", interfaceTypeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, FritzboxHostsInfoMetricAttributeKeyActive) {
+		dp.Attributes().PutStr("active", activeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, FritzboxHostsInfoMetricAttributeKeyGuest) {
+		dp.Attributes().PutStr("guest", guestAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, FritzboxHostsInfoMetricAttributeKeyFriendlyName) {
+		dp.Attributes().PutStr("friendly_name", friendlyNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
+	dp.SetIntValue(val)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricFritzboxHostsInfo) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricFritzboxHostsInfo) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricFritzboxHostsInfo(cfg FritzboxHostsInfoMetricConfig) metricFritzboxHostsInfo {
+	m := metricFritzboxHostsInfo{config: cfg}
 
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
@@ -1750,6 +1862,7 @@ type MetricsBuilder struct {
 	metricFritzboxDslRateCurrent        metricFritzboxDslRateCurrent
 	metricFritzboxDslRateMax            metricFritzboxDslRateMax
 	metricFritzboxHostsActive           metricFritzboxHostsActive
+	metricFritzboxHostsInfo             metricFritzboxHostsInfo
 	metricFritzboxHostsTotal            metricFritzboxHostsTotal
 	metricFritzboxWanConnectionStatus   metricFritzboxWanConnectionStatus
 	metricFritzboxWanConnectionUptime   metricFritzboxWanConnectionUptime
@@ -1794,6 +1907,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		metricFritzboxDslRateCurrent:        newMetricFritzboxDslRateCurrent(mbc.Metrics.FritzboxDslRateCurrent),
 		metricFritzboxDslRateMax:            newMetricFritzboxDslRateMax(mbc.Metrics.FritzboxDslRateMax),
 		metricFritzboxHostsActive:           newMetricFritzboxHostsActive(mbc.Metrics.FritzboxHostsActive),
+		metricFritzboxHostsInfo:             newMetricFritzboxHostsInfo(mbc.Metrics.FritzboxHostsInfo),
 		metricFritzboxHostsTotal:            newMetricFritzboxHostsTotal(mbc.Metrics.FritzboxHostsTotal),
 		metricFritzboxWanConnectionStatus:   newMetricFritzboxWanConnectionStatus(mbc.Metrics.FritzboxWanConnectionStatus),
 		metricFritzboxWanConnectionUptime:   newMetricFritzboxWanConnectionUptime(mbc.Metrics.FritzboxWanConnectionUptime),
@@ -1878,6 +1992,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricFritzboxDslRateCurrent.emit(ils.Metrics())
 	mb.metricFritzboxDslRateMax.emit(ils.Metrics())
 	mb.metricFritzboxHostsActive.emit(ils.Metrics())
+	mb.metricFritzboxHostsInfo.emit(ils.Metrics())
 	mb.metricFritzboxHostsTotal.emit(ils.Metrics())
 	mb.metricFritzboxWanConnectionStatus.emit(ils.Metrics())
 	mb.metricFritzboxWanConnectionUptime.emit(ils.Metrics())
@@ -1944,6 +2059,11 @@ func (mb *MetricsBuilder) RecordFritzboxDslRateMaxDataPoint(ts pcommon.Timestamp
 // RecordFritzboxHostsActiveDataPoint adds a data point to fritzbox.hosts.active metric.
 func (mb *MetricsBuilder) RecordFritzboxHostsActiveDataPoint(ts pcommon.Timestamp, val int64) {
 	mb.metricFritzboxHostsActive.recordDataPoint(mb.startTime, ts, val)
+}
+
+// RecordFritzboxHostsInfoDataPoint adds a data point to fritzbox.hosts.info metric.
+func (mb *MetricsBuilder) RecordFritzboxHostsInfoDataPoint(ts pcommon.Timestamp, val int64, hostnameAttributeValue string, ipAttributeValue string, macAttributeValue string, interfaceTypeAttributeValue string, activeAttributeValue string, guestAttributeValue string, friendlyNameAttributeValue string) {
+	mb.metricFritzboxHostsInfo.recordDataPoint(mb.startTime, ts, val, hostnameAttributeValue, ipAttributeValue, macAttributeValue, interfaceTypeAttributeValue, activeAttributeValue, guestAttributeValue, friendlyNameAttributeValue)
 }
 
 // RecordFritzboxHostsTotalDataPoint adds a data point to fritzbox.hosts.total metric.

@@ -3,6 +3,7 @@ package fritzbox
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
@@ -16,10 +17,12 @@ import (
 
 // fakeTR064 is a scripted TR-064 client. Responses are keyed by
 // "serviceType#action"; missing keys return a SOAP-fault-like error.
+// fetchBody is returned by FetchURL regardless of path when non-nil.
 type fakeTR064 struct {
 	services  []tr064.Service
 	responses map[string]map[string]string
 	calls     []string
+	fetchBody []byte
 }
 
 func (f *fakeTR064) Services(_ context.Context) ([]tr064.Service, error) {
@@ -32,6 +35,13 @@ func (f *fakeTR064) Call(_ context.Context, serviceType, _, action string) (map[
 
 func (f *fakeTR064) CallWithArgs(_ context.Context, serviceType, _, action string, _ map[string]string) (map[string]string, error) {
 	return f.respond(serviceType, action)
+}
+
+func (f *fakeTR064) FetchURL(_ context.Context, _ string) ([]byte, error) {
+	if f.fetchBody == nil {
+		return nil, errors.New("no fetch body configured")
+	}
+	return f.fetchBody, nil
 }
 
 func (f *fakeTR064) respond(serviceType, action string) (map[string]string, error) {
@@ -117,7 +127,8 @@ func dslBoxResponses() map[string]map[string]string {
 		"urn:dslforum-org:service:WLANConfiguration:3#GetStatistics": {
 			"NewTotalPacketsSent": "0", "NewTotalPacketsReceived": "0",
 		},
-		"urn:dslforum-org:service:Hosts:1#GetHostNumberOfEntries": {"NewHostNumberOfEntries": "74"},
+		"urn:dslforum-org:service:Hosts:1#GetHostNumberOfEntries":   {"NewHostNumberOfEntries": "74"},
+		"urn:dslforum-org:service:Hosts:1#X_AVM-DE_GetHostListPath": {"NewX_AVM-DE_HostListPath": "/devicehostlist.lua?sid=fake"},
 	}
 }
 
@@ -428,5 +439,40 @@ func TestConfigValidate(t *testing.T) {
 	bad.ScraperControllerSettings.Timeout = bad.ScraperControllerSettings.CollectionInterval + 1
 	if err := bad.Validate(); err == nil {
 		t.Error("timeout > collection_interval must fail")
+	}
+}
+
+func TestScrapeHostInfo(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/hostlist.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	responses := dslBoxResponses()
+	responses["urn:dslforum-org:service:Hosts:1#X_AVM-DE_GetHostListPath"] = map[string]string{
+		"NewX_AVM-DE_HostListPath": "/devicehostlist.lua?sid=fake",
+	}
+	fake := &fakeTR064{services: dslBoxServices, responses: responses, fetchBody: fixture}
+	s := newTestScraper(t, fake)
+
+	metrics, err := s.scrape(context.Background())
+	if err != nil {
+		t.Fatalf("scrape: %v", err)
+	}
+	got := collectMetrics(t, metrics)
+	points := got["fritzbox.hosts.info"]
+	if len(points) != 3 {
+		t.Fatalf("expected 3 host info series, got %d", len(points))
+	}
+	tv := findPoint(t, points, map[string]string{"hostname": "living-room-tv"})
+	if tv.attrs["ip"] != "192.168.178.20" || tv.attrs["mac"] != "AA:BB:CC:DD:EE:FF" {
+		t.Errorf("tv attrs wrong: %v", tv.attrs)
+	}
+	if tv.attrs["active"] != "1" || tv.attrs["guest"] != "0" || tv.attrs["friendly_name"] != "Living Room TV" {
+		t.Errorf("tv attrs wrong: %v", tv.attrs)
+	}
+	// Empty hostname/ip must not break parsing.
+	empty := findPoint(t, points, map[string]string{"mac": "77:88:99:AA:BB:CC"})
+	if empty.attrs["hostname"] != "" || empty.attrs["ip"] != "" {
+		t.Errorf("empty fields must be empty strings: %v", empty.attrs)
 	}
 }

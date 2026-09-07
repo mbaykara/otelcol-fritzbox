@@ -90,6 +90,26 @@ Maximum attainable DSL rate.
 | ---- | ----------- | ------ | ----------------- | ------------------- |
 | network.io.direction | The direction of traffic from the perspective of the Fritz!Box interface. | Str: ``receive``, ``transmit`` | Recommended | - |
 
+### fritzbox.hosts.info
+
+One series per known host; value is always 1, attributes carry the device identity.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| 1 | Gauge | Int | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hostname | Host name reported by the device. | Any Str | Recommended | - |
+| ip | IPv4 address of the host. | Any Str | Recommended | - |
+| mac | MAC address of the host. | Any Str | Recommended | - |
+| interface_type | How the host is connected (e.g. Ethernet, 802.11). | Any Str | Recommended | - |
+| active | Whether the host is currently active on the network ("1" or "0"). | Any Str | Recommended | - |
+| guest | Whether the host is a guest device ("1" or "0"). | Any Str | Recommended | - |
+| friendly_name | User-assigned friendly name of the host. | Any Str | Recommended | - |
+
 ### fritzbox.hosts.total
 
 Total number of hosts known to the Fritz!Box.

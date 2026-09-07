@@ -288,6 +288,60 @@ func (ms *FritzboxHostsActiveMetricConfig) Unmarshal(parser *confmap.Conf) error
 	return nil
 }
 
+// FritzboxHostsInfoMetricAttributeKey specifies the key of an attribute for the fritzbox.hosts.info metric.
+type FritzboxHostsInfoMetricAttributeKey string
+
+const (
+	FritzboxHostsInfoMetricAttributeKeyHostname      FritzboxHostsInfoMetricAttributeKey = "hostname"
+	FritzboxHostsInfoMetricAttributeKeyIP            FritzboxHostsInfoMetricAttributeKey = "ip"
+	FritzboxHostsInfoMetricAttributeKeyMac           FritzboxHostsInfoMetricAttributeKey = "mac"
+	FritzboxHostsInfoMetricAttributeKeyInterfaceType FritzboxHostsInfoMetricAttributeKey = "interface_type"
+	FritzboxHostsInfoMetricAttributeKeyActive        FritzboxHostsInfoMetricAttributeKey = "active"
+	FritzboxHostsInfoMetricAttributeKeyGuest         FritzboxHostsInfoMetricAttributeKey = "guest"
+	FritzboxHostsInfoMetricAttributeKeyFriendlyName  FritzboxHostsInfoMetricAttributeKey = "friendly_name"
+)
+
+// FritzboxHostsInfoMetricConfig provides config for the fritzbox.hosts.info metric.
+type FritzboxHostsInfoMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []FritzboxHostsInfoMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *FritzboxHostsInfoMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *FritzboxHostsInfoMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case FritzboxHostsInfoMetricAttributeKeyHostname, FritzboxHostsInfoMetricAttributeKeyIP, FritzboxHostsInfoMetricAttributeKeyMac, FritzboxHostsInfoMetricAttributeKeyInterfaceType, FritzboxHostsInfoMetricAttributeKeyActive, FritzboxHostsInfoMetricAttributeKeyGuest, FritzboxHostsInfoMetricAttributeKeyFriendlyName:
+		default:
+			return fmt.Errorf("metric fritzbox.hosts.info doesn't have an attribute %v, valid attributes: [hostname, ip, mac, interface_type, active, guest, friendly_name]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
 // FritzboxHostsTotalMetricConfig provides config for the fritzbox.hosts.total metric.
 type FritzboxHostsTotalMetricConfig struct {
 	Enabled          bool `mapstructure:"enabled"`
@@ -799,6 +853,7 @@ type MetricsConfig struct {
 	FritzboxDslRateCurrent        FritzboxDslRateCurrentMetricConfig        `mapstructure:"fritzbox.dsl.rate.current"`
 	FritzboxDslRateMax            FritzboxDslRateMaxMetricConfig            `mapstructure:"fritzbox.dsl.rate.max"`
 	FritzboxHostsActive           FritzboxHostsActiveMetricConfig           `mapstructure:"fritzbox.hosts.active"`
+	FritzboxHostsInfo             FritzboxHostsInfoMetricConfig             `mapstructure:"fritzbox.hosts.info"`
 	FritzboxHostsTotal            FritzboxHostsTotalMetricConfig            `mapstructure:"fritzbox.hosts.total"`
 	FritzboxWanConnectionStatus   FritzboxWanConnectionStatusMetricConfig   `mapstructure:"fritzbox.wan.connection.status"`
 	FritzboxWanConnectionUptime   FritzboxWanConnectionUptimeMetricConfig   `mapstructure:"fritzbox.wan.connection.uptime"`
@@ -845,6 +900,11 @@ func DefaultMetricsConfig() MetricsConfig {
 		},
 		FritzboxHostsActive: FritzboxHostsActiveMetricConfig{
 			Enabled: false,
+		},
+		FritzboxHostsInfo: FritzboxHostsInfoMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []FritzboxHostsInfoMetricAttributeKey{FritzboxHostsInfoMetricAttributeKeyHostname, FritzboxHostsInfoMetricAttributeKeyIP, FritzboxHostsInfoMetricAttributeKeyMac, FritzboxHostsInfoMetricAttributeKeyInterfaceType, FritzboxHostsInfoMetricAttributeKeyActive, FritzboxHostsInfoMetricAttributeKeyGuest, FritzboxHostsInfoMetricAttributeKeyFriendlyName},
 		},
 		FritzboxHostsTotal: FritzboxHostsTotalMetricConfig{
 			Enabled: true,

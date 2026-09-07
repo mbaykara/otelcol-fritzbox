@@ -2,6 +2,7 @@ package fritzbox
 
 import (
 	"context"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net/http"
@@ -139,6 +140,7 @@ func (s *fritzboxScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 	s.scrapeDSL(ctx, now, &errs)
 	s.scrapeWLAN(ctx, now, &errs)
 	s.scrapeHosts(ctx, now, &errs)
+	s.scrapeHostInfo(ctx, now, &errs)
 
 	resourceOpts := s.resourceOptions(ctx)
 	return s.mb.Emit(resourceOpts...), errors.Join(errs...)
@@ -451,6 +453,62 @@ func (s *fritzboxScraper) scrapeHosts(ctx context.Context, now pcommon.Timestamp
 		}
 	}
 	s.mb.RecordFritzboxHostsActiveDataPoint(now, active)
+}
+
+// hostListItem is one entry of the XML document returned by the
+// X_AVM-DE_GetHostListPath URL (/devicehostlist.lua).
+type hostListItem struct {
+	Index         string `xml:"Index"`
+	IPAddress     string `xml:"IPAddress"`
+	MACAddress    string `xml:"MACAddress"`
+	Active        string `xml:"Active"`
+	HostName      string `xml:"HostName"`
+	InterfaceType string `xml:"InterfaceType"`
+	Guest         string `xml:"X_AVM-DE_Guest"`
+	FriendlyName  string `xml:"X_AVM-DE_FriendlyName"`
+}
+
+type hostList struct {
+	XMLName xml.Name       `xml:"List"`
+	Items   []hostListItem `xml:"Item"`
+}
+
+// scrapeHostInfo fetches the full device list in one round trip and emits
+// one fritzbox.hosts.info series per host.
+func (s *fritzboxScraper) scrapeHostInfo(ctx context.Context, now pcommon.Timestamp, errs *[]error) {
+	if !s.cfg.MetricsBuilderConfig.Metrics.FritzboxHostsInfo.Enabled {
+		return
+	}
+	resp, err := s.callGroup(ctx, "host-info", serviceHosts, "X_AVM-DE_GetHostListPath")
+	if err != nil {
+		*errs = append(*errs, err)
+		return
+	}
+	path := resp["NewX_AVM-DE_HostListPath"]
+	if path == "" {
+		return
+	}
+	body, err := s.client.FetchURL(ctx, path)
+	if err != nil {
+		s.warnOnce("host-info-fetch", fmt.Sprintf("host list fetch failed: %v", err))
+		return
+	}
+	var list hostList
+	if err := xml.Unmarshal(body, &list); err != nil {
+		s.warnOnce("host-info-parse", fmt.Sprintf("host list parse failed: %v", err))
+		return
+	}
+	for _, item := range list.Items {
+		s.mb.RecordFritzboxHostsInfoDataPoint(now, 1,
+			item.HostName,
+			item.IPAddress,
+			item.MACAddress,
+			item.InterfaceType,
+			item.Active,
+			item.Guest,
+			item.FriendlyName,
+		)
+	}
 }
 
 // callGroup resolves a service by prefix and calls an action on it. Missing

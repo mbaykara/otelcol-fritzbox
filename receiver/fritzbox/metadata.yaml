@@ -6,6 +6,9 @@ status:
     development: [metrics]
 
 attributes:
+  active:
+    type: string
+    description: Whether the host is currently active on the network ("1" or "0").
   error.type:
     type: string
     description: The type of DSL line error reported by the Fritz!Box.
@@ -13,6 +16,15 @@ attributes:
   external_ip:
     description: The external (WAN) IP address currently assigned to the Fritz!Box.
     type: string
+  friendly_name:
+    type: string
+    description: User-assigned friendly name of the host.
+  guest:
+    type: string
+    description: Whether the host is a guest device ("1" or "0").
+  hostname:
+    type: string
+    description: Host name reported by the device.
   hw.id:
     description: >-
       Synthetic hardware identifier required by the hw.network.* semantic
@@ -22,6 +34,15 @@ attributes:
   hw.name:
     description: Easily recognizable name for the interface (e.g. wan, or the WLAN SSID).
     type: string
+  interface_type:
+    type: string
+    description: How the host is connected (e.g. Ethernet, 802.11).
+  ip:
+    type: string
+    description: IPv4 address of the host.
+  mac:
+    type: string
+    description: MAC address of the host.
   network.io.direction:
     type: string
     description: The direction of traffic from the perspective of the Fritz!Box interface.
@@ -97,6 +118,15 @@ metrics:
     unit: "{host}"
     gauge:
       value_type: int
+
+  fritzbox.hosts.info:
+    enabled: true
+    stability: development
+    description: One series per known host; value is always 1, attributes carry the device identity.
+    unit: "1"
+    gauge:
+      value_type: int
+    attributes: [hostname, ip, mac, interface_type, active, guest, friendly_name]
 
   fritzbox.hosts.total:
     enabled: true
