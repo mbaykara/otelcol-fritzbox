@@ -39,6 +39,16 @@ FRITZBOX_USERNAME=mbaykara FRITZBOX_PASSWORD=... GCOM_TOKEN=glc_... \
 - Source: X_AVM-DE_GetHostListPath -> /devicehostlist.lua?sid=... (single call, ~73 hosts).
 - Dashboard panel 15 "Connected Devices" (table, sorted Active desc) validated via gcx snapshot.
 
+## Review fixes + release (2026-09-07 ~11:45)
+- External review findings fixed (commit 8486262):
+  - HIGH: resourceOptions deadlock (s.mu held across callGroup->warnOnce). Fixed + regression test.
+  - HIGH: fritzbox.hosts.info now opt-in (privacy/cardinality); example configs enable it explicitly.
+  - MED: digest auth preemptive once challenge cached (no per-call 401 round trip).
+  - MED: recordUtilization propagates scrape ctx.
+- v0.1.0 released: CI + Release green, binaries for linux/darwin amd64/arm64 on GitHub Releases.
+- Repo: github.com/mbaykara/otelcol-fritzbox (private). Module path renamed from fritzotel-receiver.
+- Dashboard link on baykara stack updated to new repo URL.
+
 ## Known limitations
 - WAN connection status/uptime unavailable on this box (TR-064 service
   advertised but faults).
