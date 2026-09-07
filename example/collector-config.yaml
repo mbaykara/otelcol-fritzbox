@@ -1,3 +1,8 @@
+# collector-config.yaml — development config with debug output.
+# Prints all collected metrics to stdout. Note: this config enables the
+# opt-in privacy-relevant metrics (per-device identity and external IP)
+# to show everything the receiver can do. For a privacy-preserving
+# starting point, use collector-config-minimal.yaml instead.
 receivers:
   fritzbox:
     endpoint: http://192.168.178.1:49000
@@ -6,10 +11,13 @@ receivers:
     collection_interval: 15s
     timeout: 10s
     metrics:
+      # Opt-in: one series per known device (hostname, IP, MAC, ...).
       fritzbox.hosts.info:
         enabled: true
+      # Opt-in: N extra SOAP calls per interval to count active hosts.
       fritzbox.hosts.active:
         enabled: true
+      # Opt-in: exposes your public IP as a metric attribute.
       fritzbox.wan.external_ip:
         enabled: true
 
@@ -23,8 +31,6 @@ processors:
 service:
   pipelines:
     metrics:
-      fritzbox.hosts.info:
-        enabled: true
       receivers: [fritzbox]
       processors: [batch]
       exporters: [debug]

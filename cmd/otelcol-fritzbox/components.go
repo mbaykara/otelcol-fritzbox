@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/collector/exporter/otlphttpexporter"
 	"go.opentelemetry.io/collector/processor/batchprocessor"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
+	otelconftelemetry "go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 
 	fritzbox "github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox"
 )
@@ -23,7 +24,9 @@ import (
 // Keep in sync with example/builder-config.yaml.
 func components() (otelcol.Factories, error) {
 	var err error
-	factories := otelcol.Factories{}
+	factories := otelcol.Factories{
+		Telemetry: otelconftelemetry.NewFactory(),
+	}
 
 	factories.Extensions, err = otelcol.MakeFactoryMap[extension.Factory](
 		basicauthextension.NewFactory(),

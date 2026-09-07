@@ -39,8 +39,6 @@ service:
   extensions: [basicauth/grafana-cloud]
   pipelines:
     metrics:
-      fritzbox.hosts.info:
-        enabled: true
       receivers: [fritzbox]
       processors: [batch]
       exporters: [otlphttp/grafana-cloud]

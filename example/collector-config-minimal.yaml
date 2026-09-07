@@ -1,0 +1,22 @@
+# collector-config-minimal.yaml — smallest working configuration.
+# No opt-in metrics: no per-device identity, no external IP. Only
+# aggregated, low-cardinality metrics (WAN, DSL, WLAN radios, host counts).
+receivers:
+  fritzbox:
+    endpoint: http://fritz.box:49000
+    # Credentials are optional but recommended. Without them, only
+    # unauthenticated groups (host counts) are collected.
+    username: ${env:FRITZBOX_USERNAME}
+    password: ${env:FRITZBOX_PASSWORD}
+    collection_interval: 30s
+    timeout: 10s
+
+exporters:
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    metrics:
+      receivers: [fritzbox]
+      exporters: [debug]
