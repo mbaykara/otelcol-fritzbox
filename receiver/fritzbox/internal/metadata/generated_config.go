@@ -902,7 +902,7 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: false,
 		},
 		FritzboxHostsInfo: FritzboxHostsInfoMetricConfig{
-			Enabled:             true,
+			Enabled:             false,
 			AggregationStrategy: AggregationStrategyAvg,
 			EnabledAttributes:   []FritzboxHostsInfoMetricAttributeKey{FritzboxHostsInfoMetricAttributeKeyHostname, FritzboxHostsInfoMetricAttributeKeyIP, FritzboxHostsInfoMetricAttributeKeyMac, FritzboxHostsInfoMetricAttributeKeyInterfaceType, FritzboxHostsInfoMetricAttributeKeyActive, FritzboxHostsInfoMetricAttributeKeyGuest, FritzboxHostsInfoMetricAttributeKeyFriendlyName},
 		},

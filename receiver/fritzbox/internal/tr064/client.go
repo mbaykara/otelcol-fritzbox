@@ -218,7 +218,15 @@ func (c *Client) CallWithArgs(ctx context.Context, serviceType, controlURL, acti
 	safeURL := stripEndpoint(callURL) // uri used in digest is path+query
 	soapAction := serviceType + "#" + action
 
-	resp, err := c.doCall(ctx, callURL, soapAction, payload, "")
+	// If a digest challenge is already cached, send the Authorization header
+	// preemptively to avoid a 401 round trip per call. The 401 retry below
+	// still handles the first call and nonce rotation.
+	auth := ""
+	if c.username != "" {
+		auth = c.auth.authorizationFor(http.MethodPost, safeURL, c.username, c.password)
+	}
+
+	resp, err := c.doCall(ctx, callURL, soapAction, payload, auth)
 	if err != nil {
 		return nil, err
 	}

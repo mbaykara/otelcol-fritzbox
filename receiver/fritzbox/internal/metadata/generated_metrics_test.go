@@ -117,7 +117,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			allMetricsCount++
 			mb.RecordFritzboxHostsActiveDataPoint(ts, 1)
-			defaultMetricsCount++
+
 			allMetricsCount++
 			mb.RecordFritzboxHostsInfoDataPoint(ts, 1, "hostname-val", "ip-val", "mac-val", "interface_type-val", "active-val", "guest-val", "friendly_name-val")
 			if tt.name == "reaggregate_set" {

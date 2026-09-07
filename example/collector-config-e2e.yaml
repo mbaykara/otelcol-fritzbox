@@ -14,6 +14,8 @@ receivers:
     collection_interval: 30s
     timeout: 10s
     metrics:
+      fritzbox.hosts.info:
+        enabled: true
       fritzbox.hosts.active:
         enabled: true
 
@@ -37,6 +39,8 @@ service:
   extensions: [basicauth/grafana-cloud]
   pipelines:
     metrics:
+      fritzbox.hosts.info:
+        enabled: true
       receivers: [fritzbox]
       processors: [batch]
       exporters: [otlphttp/grafana-cloud]

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -448,11 +449,10 @@ func TestScrapeHostInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 	responses := dslBoxResponses()
-	responses["urn:dslforum-org:service:Hosts:1#X_AVM-DE_GetHostListPath"] = map[string]string{
-		"NewX_AVM-DE_HostListPath": "/devicehostlist.lua?sid=fake",
-	}
 	fake := &fakeTR064{services: dslBoxServices, responses: responses, fetchBody: fixture}
 	s := newTestScraper(t, fake)
+	s.cfg.MetricsBuilderConfig.Metrics.FritzboxHostsInfo.Enabled = true
+	s.mb = metadata.NewMetricsBuilder(s.cfg.MetricsBuilderConfig, receivertest.NewNopSettings(metadata.Type))
 
 	metrics, err := s.scrape(context.Background())
 	if err != nil {
@@ -474,5 +474,44 @@ func TestScrapeHostInfo(t *testing.T) {
 	empty := findPoint(t, points, map[string]string{"mac": "77:88:99:AA:BB:CC"})
 	if empty.attrs["hostname"] != "" || empty.attrs["ip"] != "" {
 		t.Errorf("empty fields must be empty strings: %v", empty.attrs)
+	}
+}
+
+// TestScrapeHostInfoOptInByDefault ensures the per-device metric is off unless
+// explicitly enabled (privacy: exports hostname/IP/MAC per host).
+func TestScrapeHostInfoOptInByDefault(t *testing.T) {
+	fake := &fakeTR064{services: dslBoxServices, responses: dslBoxResponses()}
+	s := newTestScraper(t, fake)
+
+	metrics, err := s.scrape(context.Background())
+	if err != nil {
+		t.Fatalf("scrape: %v", err)
+	}
+	if _, ok := collectMetrics(t, metrics)["fritzbox.hosts.info"]; ok {
+		t.Error("fritzbox.hosts.info must not be emitted unless explicitly enabled")
+	}
+}
+
+// TestScrapeUnauthenticatedNoDeadlock is a regression test: with no
+// credentials, DeviceInfo.GetInfo fails with 401, and resourceOptions must
+// not deadlock on the scraper mutex (warnOnce also takes it).
+func TestScrapeUnauthenticatedNoDeadlock(t *testing.T) {
+	responses := dslBoxResponses()
+	delete(responses, "urn:dslforum-org:service:DeviceInfo:1#GetInfo")
+	responses["urn:dslforum-org:service:DeviceInfo:1#GetInfo"] = nil
+	fake := &fakeTR064{services: dslBoxServices, responses: responses}
+	// Force the 401 path: fakeTR064 returns *tr064.Error{Code:401} for missing keys.
+	s := newTestScraper(t, fake)
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := s.scrape(context.Background())
+		done <- err
+	}()
+	select {
+	case <-done:
+		// no deadlock
+	case <-time.After(10 * time.Second):
+		t.Fatal("scrape deadlocked on unauthenticated DeviceInfo")
 	}
 }

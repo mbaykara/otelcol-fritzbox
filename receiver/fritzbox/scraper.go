@@ -147,19 +147,25 @@ func (s *fritzboxScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 }
 
 // resourceOptions fetches static device information once and caches it for
-// the resource attributes.
+// the resource attributes. The TR-064 call happens outside the mutex:
+// callGroup may log via warnOnce, which also takes s.mu, so holding it here
+// would deadlock (Go mutexes are not reentrant).
 func (s *fritzboxScraper) resourceOptions(ctx context.Context) []metadata.ResourceMetricsOption {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.resourceAttrsCache != (pcommon.Resource{}) {
-		return []metadata.ResourceMetricsOption{metadata.WithResource(s.resourceAttrsCache)}
+	cached := s.resourceAttrsCache
+	s.mu.Unlock()
+	if cached != (pcommon.Resource{}) {
+		return []metadata.ResourceMetricsOption{metadata.WithResource(cached)}
 	}
 	info, err := s.callGroup(ctx, "device-info", serviceDeviceInfo, "GetInfo")
 	if err != nil {
 		return nil
 	}
-	s.resourceAttrsCache = buildResource(info, s.cfg.Endpoint)
-	return []metadata.ResourceMetricsOption{metadata.WithResource(s.resourceAttrsCache)}
+	res := buildResource(info, s.cfg.Endpoint)
+	s.mu.Lock()
+	s.resourceAttrsCache = res
+	s.mu.Unlock()
+	return []metadata.ResourceMetricsOption{metadata.WithResource(res)}
 }
 
 // buildResource assembles the resource attributes from DeviceInfo.GetInfo
@@ -226,20 +232,20 @@ func (s *fritzboxScraper) scrapeWAN(ctx context.Context, now pcommon.Timestamp, 
 
 	// Bandwidth utilization is an AVM extension, reported in bps as strings.
 	if util, err := s.callGroup(ctx, "wan-utilization", serviceWANCommonInterfaceCfg, "X_AVM-DE_GetCommonLinkProperties"); err == nil {
-		s.recordUtilization(now, util)
+		s.recordUtilization(ctx, now, util)
 	}
 	// Connection status/uptime come from the active WAN connection service.
 	s.scrapeWANConnection(ctx, now, errs)
 }
 
 // recordUtilization converts the AVM utilization values to fractions.
-func (s *fritzboxScraper) recordUtilization(now pcommon.Timestamp, util map[string]string) {
+func (s *fritzboxScraper) recordUtilization(ctx context.Context, now pcommon.Timestamp, util map[string]string) {
 	down, downOK := parseInt(util["NewX_AVM-DE_DownstreamCurrentUtilization"])
 	up, upOK := parseInt(util["NewX_AVM-DE_UpstreamCurrentUtilization"])
 	if !downOK && !upOK {
 		return
 	}
-	props, err := s.callGroupCtx(context.Background(), serviceWANCommonInterfaceCfg, "GetCommonLinkProperties")
+	props, err := s.callGroupCtx(ctx, serviceWANCommonInterfaceCfg, "GetCommonLinkProperties")
 	if err != nil {
 		return
 	}

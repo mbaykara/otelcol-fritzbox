@@ -120,7 +120,9 @@ metrics:
       value_type: int
 
   fritzbox.hosts.info:
-    enabled: true
+    # Opt-in: exports per-device identity (hostname, IP, MAC, guest flag) and
+    # creates one series per host, so it is disabled by default.
+    enabled: false
     stability: development
     description: One series per known host; value is always 1, attributes carry the device identity.
     unit: "1"

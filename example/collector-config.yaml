@@ -6,6 +6,8 @@ receivers:
     collection_interval: 15s
     timeout: 10s
     metrics:
+      fritzbox.hosts.info:
+        enabled: true
       fritzbox.hosts.active:
         enabled: true
       fritzbox.wan.external_ip:
@@ -21,6 +23,8 @@ processors:
 service:
   pipelines:
     metrics:
+      fritzbox.hosts.info:
+        enabled: true
       receivers: [fritzbox]
       processors: [batch]
       exporters: [debug]

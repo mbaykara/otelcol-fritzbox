@@ -35,6 +35,7 @@ WAN connection) is exposed under `fritzbox.*`.
 | `fritzbox.wlan.clients` | Gauge | {client} | Associated clients per radio |
 | `fritzbox.hosts.total` | Gauge | {host} | Known hosts |
 | `fritzbox.hosts.active` | Gauge | {host} | Active hosts (optional; costs one SOAP call per host) |
+| `fritzbox.hosts.info` | Gauge | 1 | Per-device identity series (opt-in; attributes: hostname, ip, mac, interface_type, active, guest, friendly_name) |
 
 Resource attributes: `hw.vendor=AVM`, `hw.model`, `hw.serial_number`,
 `fritzbox.device.software_version`, `server.address`.
