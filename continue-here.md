@@ -4,7 +4,7 @@
 otelcol-fritzbox — OTel Collector metrics receiver for AVM Fritz!Box
 routers (TR-064). Spec: `specs/2026-09-07-fritzbox-receiver-design.md`.
 
-## Current state (2026-09-07 ~09:35)
+## Current state (2026-09-07 ~13:05)
 **E2E validated: receiver -> collector -> Grafana Cloud -> dashboard.**
 
 - Receiver: complete, unit-tested, tagged `v0.1.0`.
@@ -47,6 +47,8 @@ FRITZBOX_USERNAME=mbaykara FRITZBOX_PASSWORD=... GCOM_TOKEN=glc_... \
   - MED: recordUtilization propagates scrape ctx.
 - v0.1.0 released: CI + Release green, binaries for linux/darwin amd64/arm64 on GitHub Releases.
 - Repo: github.com/mbaykara/otelcol-fritzbox (private). Module path renamed from fritzotel-receiver.
+- v0.1.1 released (docs/layout/AGENTS.md policy). CI + Release workflows green on both tags.
+- Spec lives at specs/ (docs/superpowers removed).
 - Dashboard link on baykara stack updated to new repo URL.
 
 ## Known limitations
