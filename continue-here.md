@@ -4,7 +4,7 @@
 otelcol-fritzbox — OTel Collector metrics receiver for AVM Fritz!Box
 routers (TR-064). Spec: `specs/2026-09-07-fritzbox-receiver-design.md`.
 
-## Current state (2026-09-07 ~13:05)
+## Current state (2026-09-07 ~13:30)
 **E2E validated: receiver -> collector -> Grafana Cloud -> dashboard.**
 
 - Receiver: complete, unit-tested, tagged `v0.1.0`.
@@ -56,3 +56,9 @@ FRITZBOX_USERNAME=mbaykara FRITZBOX_PASSWORD=... GCOM_TOKEN=glc_... \
   advertised but faults).
 - WAN utilization skipped (auth scope).
 - `fritzbox.wan.external_ip` disabled by default.
+
+## Releases reset (2026-09-07 ~13:30)
+All tags and releases (v0.1.0, v0.1.1, v0.1.2) were deleted; the v0.1.2
+release workflow was cancelled. CHANGELOG.md (Unreleased section) documents
+everything since project start. A proper release will be cut later today —
+when tagging, rename the Unreleased section in CHANGELOG.md first.
