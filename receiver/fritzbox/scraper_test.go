@@ -3,6 +3,7 @@ package fritzbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -11,17 +12,20 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.opentelemetry.io/collector/scraper/scrapererror"
 
 	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/metadata"
 	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/tr064"
 )
 
-// fakeTR064 is a scripted TR-064 client. Responses are keyed by
-// "serviceType#action"; missing keys return a SOAP-fault-like error.
-// fetchBody is returned by FetchURL regardless of path when non-nil.
+// fakeTR064 is a scripted TR-064 client. Responses and errors are keyed by
+// "serviceType#action"; errors take precedence, and missing keys return
+// UPnP fault 401 (Invalid Action). fetchBody is returned by FetchURL
+// regardless of path when non-nil.
 type fakeTR064 struct {
 	services  []tr064.Service
 	responses map[string]map[string]string
+	errs      map[string]error
 	calls     []string
 	fetchBody []byte
 }
@@ -48,6 +52,9 @@ func (f *fakeTR064) FetchURL(_ context.Context, _ string) ([]byte, error) {
 func (f *fakeTR064) respond(serviceType, action string) (map[string]string, error) {
 	key := serviceType + "#" + action
 	f.calls = append(f.calls, key)
+	if err, ok := f.errs[key]; ok {
+		return nil, err
+	}
 	if resp, ok := f.responses[key]; ok {
 		return resp, nil
 	}
@@ -496,11 +503,15 @@ func TestScrapeHostInfoOptInByDefault(t *testing.T) {
 // credentials, DeviceInfo.GetInfo fails with 401, and resourceOptions must
 // not deadlock on the scraper mutex (warnOnce also takes it).
 func TestScrapeUnauthenticatedNoDeadlock(t *testing.T) {
-	responses := dslBoxResponses()
-	delete(responses, "urn:dslforum-org:service:DeviceInfo:1#GetInfo")
-	responses["urn:dslforum-org:service:DeviceInfo:1#GetInfo"] = nil
-	fake := &fakeTR064{services: dslBoxServices, responses: responses}
-	// Force the 401 path: fakeTR064 returns *tr064.Error{Code:401} for missing keys.
+	fake := &fakeTR064{
+		services:  dslBoxServices,
+		responses: dslBoxResponses(),
+		errs: map[string]error{
+			"urn:dslforum-org:service:DeviceInfo:1#GetInfo": fmt.Errorf("tr064: action GetInfo: %w", tr064.ErrUnauthorized),
+		},
+	}
+	// resourceOptions calls callGroup, which logs via warnOnce; both take
+	// s.mu, so this path deadlocks if the lock is held across the call.
 	s := newTestScraper(t, fake)
 
 	done := make(chan error, 1)
@@ -509,9 +520,89 @@ func TestScrapeUnauthenticatedNoDeadlock(t *testing.T) {
 		done <- err
 	}()
 	select {
-	case <-done:
-		// no deadlock
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("missing credentials must be a skip, not a scrape error: %v", err)
+		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("scrape deadlocked on unauthenticated DeviceInfo")
+	}
+	if _, warned := s.warned["device-info-auth"]; !warned {
+		t.Error("credential skip path not reached for resource DeviceInfo")
+	}
+}
+
+func TestScrapeRejectedCredentialsIsPartialError(t *testing.T) {
+	fake := &fakeTR064{
+		services:  dslBoxServices,
+		responses: dslBoxResponses(),
+		errs: map[string]error{
+			"urn:dslforum-org:service:DeviceInfo:1#GetInfo": fmt.Errorf("tr064: action GetInfo: %w", tr064.ErrUnauthorized),
+		},
+	}
+	s := newTestScraper(t, fake)
+	s.cfg.Username = "user"
+	s.cfg.Password = "wrong"
+
+	metrics, err := s.scrape(context.Background())
+	if !scrapererror.IsPartialScrapeError(err) {
+		t.Fatalf("rejected credentials must yield a partial scrape error, got %T: %v", err, err)
+	}
+	// PartialScrapeError does not implement Unwrap, so check the message.
+	if !strings.Contains(err.Error(), "device rejected credentials") {
+		t.Errorf("error does not name the credential rejection: %v", err)
+	}
+	got := collectMetrics(t, metrics)
+	if len(got["fritzbox.hosts.total"]) == 0 {
+		t.Error("unaffected group dropped")
+	}
+	if len(got["fritzbox.device.uptime"]) != 0 {
+		t.Error("failed group emitted data")
+	}
+}
+
+func TestScrapeUPnPFaultIsSkip(t *testing.T) {
+	fake := &fakeTR064{
+		services:  dslBoxServices,
+		responses: dslBoxResponses(),
+		errs: map[string]error{
+			"urn:dslforum-org:service:WANDSLInterfaceConfig:1#GetInfo": &tr064.Error{Code: 820, Description: "Internal Error"},
+		},
+	}
+	s := newTestScraper(t, fake)
+
+	metrics, err := s.scrape(context.Background())
+	if err != nil {
+		t.Fatalf("UPnP fault must be a skip, got %v", err)
+	}
+	if len(collectMetrics(t, metrics)["fritzbox.dsl.rate.current"]) != 0 {
+		t.Error("faulted group emitted data")
+	}
+}
+
+func TestScrapeHostsActiveIncompleteEnumeration(t *testing.T) {
+	responses := dslBoxResponses()
+	responses["urn:dslforum-org:service:Hosts:1#GetHostNumberOfEntries"] = map[string]string{"NewHostNumberOfEntries": "3"}
+	fake := &fakeTR064{
+		services:  dslBoxServices,
+		responses: responses,
+		errs: map[string]error{
+			"urn:dslforum-org:service:Hosts:1#GetGenericHostEntry": errors.New("connection reset"),
+		},
+	}
+	s := newTestScraper(t, fake)
+	s.cfg.MetricsBuilderConfig.Metrics.FritzboxHostsActive.Enabled = true
+	s.mb = metadata.NewMetricsBuilder(s.cfg.MetricsBuilderConfig, receivertest.NewNopSettings(metadata.Type))
+
+	metrics, err := s.scrape(context.Background())
+	if !scrapererror.IsPartialScrapeError(err) {
+		t.Fatalf("incomplete enumeration must yield a partial scrape error, got %v", err)
+	}
+	got := collectMetrics(t, metrics)
+	if len(got["fritzbox.hosts.active"]) != 0 {
+		t.Error("hosts.active emitted from an incomplete enumeration")
+	}
+	if len(got["fritzbox.hosts.total"]) == 0 {
+		t.Error("hosts.total dropped")
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"net/http"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/scraper/scrapererror"
 	"go.uber.org/zap"
 
 	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/metadata"
@@ -143,7 +144,15 @@ func (s *fritzboxScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 	s.scrapeHostInfo(ctx, now, &errs)
 
 	resourceOpts := s.resourceOptions(ctx)
-	return s.mb.Emit(resourceOpts...), errors.Join(errs...)
+	md := s.mb.Emit(resourceOpts...)
+
+	// The scraper controller drops the whole batch on a plain error. Report
+	// real failures as a partial scrape so unaffected groups still export.
+	errs = slices.DeleteFunc(errs, isCapabilitySkip)
+	if len(errs) == 0 {
+		return md, nil
+	}
+	return md, scrapererror.NewPartialScrapeError(errors.Join(errs...), len(errs))
 }
 
 // resourceOptions fetches static device information once and caches it for
@@ -291,14 +300,7 @@ func (s *fritzboxScraper) scrapeWANConnection(ctx context.Context, now pcommon.T
 
 	status, err := s.call(ctx, svc, "GetStatusInfo")
 	if err != nil {
-		// Faulting advertised action or missing service: group disabled,
-		// not a scrape failure. All call paths here are best-effort.
-		var tr064Err *tr064.Error
-		if errors.As(err, &tr064Err) {
-			s.warnOnce("wan-connection-fault", fmt.Sprintf("GetStatusInfo on %s faults (UPnP %d), WAN connection metrics disabled", svc.Type, tr064Err.Code))
-			return
-		}
-		*errs = append(*errs, fmt.Errorf("wan connection status: %w", err))
+		*errs = append(*errs, s.classifyCallError("wan-connection", svc.Type, "GetStatusInfo", err))
 		return
 	}
 	connected := int64(0)
@@ -451,8 +453,9 @@ func (s *fritzboxScraper) scrapeHosts(ctx context.Context, now pcommon.Timestamp
 	for i := int64(0); i < total; i++ {
 		entry, err := s.callWithArgs(ctx, svc, "GetGenericHostEntry", map[string]string{"NewIndex": strconv.FormatInt(i, 10)})
 		if err != nil {
-			s.warnOnce("hosts-entry", fmt.Sprintf("host entry %d failed: %v", i, err))
-			continue
+			// An incomplete enumeration would undercount: emit nothing.
+			*errs = append(*errs, fmt.Errorf("fritzbox: hosts.active: host entry %d: %w", i, err))
+			return
 		}
 		if entry["NewActive"] == "1" {
 			active++
@@ -529,21 +532,32 @@ func (s *fritzboxScraper) callGroup(ctx context.Context, group, servicePrefix, a
 	}
 	resp, err := s.call(ctx, svc, action)
 	if err != nil {
-		var tr064Err *tr064.Error
-		// 401: authentication required for this action - skip group.
-		// 5xx/SOAP fault on an advertised action: the box doesn't actually
-		// implement it (observed for WANIPConnection on this box) - skip group.
-		if errors.As(err, &tr064Err) && tr064Err.Code == http.StatusUnauthorized {
-			s.warnOnce(group+"-auth", fmt.Sprintf("action %s on %s requires authentication, metric group %q skipped", action, servicePrefix, group))
-			return nil, err
-		}
-		if errors.As(err, &tr064Err) && tr064Err.Code >= 500 {
-			s.warnOnce(group+"-fault", fmt.Sprintf("action %s on %s answers with SOAP fault %d, metric group %q disabled", action, servicePrefix, tr064Err.Code, group))
-			return nil, errServiceUnavailable{servicePrefix, action}
-		}
-		return nil, fmt.Errorf("fritzbox: %s.%s: %w", servicePrefix, action, err)
+		return nil, s.classifyCallError(group, svc.Type, action, err)
 	}
 	return resp, nil
+}
+
+// classifyCallError maps a failed action call to a capability skip (logged
+// once, not a scrape failure) or to a scrape error.
+//   - HTTP 401 without configured credentials: skip, credentials are optional.
+//   - HTTP 401 with credentials: the device rejected them, scrape error.
+//   - UPnP fault: the device advertises the action but does not implement
+//     it, or the user lacks the right for it (606), skip.
+//   - Anything else (transport, cancellation, malformed response): scrape error.
+func (s *fritzboxScraper) classifyCallError(group, serviceType, action string, err error) error {
+	var upnpErr *tr064.Error
+	switch {
+	case errors.Is(err, tr064.ErrUnauthorized) && s.cfg.Username == "":
+		s.warnOnce(group+"-auth", fmt.Sprintf("action %s on %s requires credentials, metric group %q skipped", action, serviceType, group))
+		return errCredentialsRequired{serviceType, action}
+	case errors.Is(err, tr064.ErrUnauthorized):
+		return fmt.Errorf("fritzbox: %s.%s: device rejected credentials: %w", serviceType, action, err)
+	case errors.As(err, &upnpErr):
+		s.warnOnce(group+"-fault", fmt.Sprintf("action %s on %s answers with UPnP fault %d (%s), metric group %q skipped", action, serviceType, upnpErr.Code, upnpErr.Description, group))
+		return errServiceUnavailable{serviceType, action}
+	default:
+		return fmt.Errorf("fritzbox: %s.%s: %w", serviceType, action, err)
+	}
 }
 
 // callGroupCtx is callGroup without warn bookkeeping, for internal reuse.
@@ -580,6 +594,24 @@ func (s *fritzboxScraper) warnOnce(key, msg string) {
 type errServiceMissing struct{ service string }
 
 func (e errServiceMissing) Error() string { return "fritzbox: service not offered: " + e.service }
+
+// errCredentialsRequired marks an action skipped because it needs
+// credentials and none are configured.
+type errCredentialsRequired struct{ service, action string }
+
+func (e errCredentialsRequired) Error() string {
+	return "fritzbox: credentials required: " + e.service + "." + e.action
+}
+
+// isCapabilitySkip reports whether err only records that the device or the
+// configuration does not support a metric group. Such errors are logged once
+// by callGroup and must not fail the scrape.
+func isCapabilitySkip(err error) bool {
+	var missing errServiceMissing
+	var unavailable errServiceUnavailable
+	var credentials errCredentialsRequired
+	return errors.As(err, &missing) || errors.As(err, &unavailable) || errors.As(err, &credentials)
+}
 
 // errServiceUnavailable marks an advertised service whose actions fault.
 type errServiceUnavailable struct{ service, action string }

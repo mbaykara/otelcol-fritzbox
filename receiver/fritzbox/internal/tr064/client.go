@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,6 +24,11 @@ type Service struct {
 	// e.g. "/upnp/control/deviceinfo".
 	ControlURL string
 }
+
+// ErrUnauthorized reports an HTTP 401 answer after digest authentication was
+// attempted, or without credentials configured. It is distinct from UPnP
+// fault codes, which share numeric values with HTTP status codes.
+var ErrUnauthorized = errors.New("tr064: authentication required")
 
 // Error is a SOAP fault returned by the device.
 type Error struct {
@@ -253,7 +259,7 @@ func (c *Client) CallWithArgs(ctx context.Context, serviceType, controlURL, acti
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, &Error{Code: http.StatusUnauthorized, Description: "authentication required"}
+		return nil, fmt.Errorf("%w: action %s", ErrUnauthorized, action)
 	}
 	// The Fritz!Box answers action errors with HTTP 500 carrying a SOAP
 	// fault body. Parse that whenever present, regardless of status code.
