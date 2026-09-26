@@ -2,15 +2,28 @@
 
 ## Getting started
 
-Requires Go 1.27.
+Requires the Go version declared in `go.mod`. Run everything CI runs:
 
 ```sh
-go test ./...
-go vet ./...
-go build ./cmd/otelcol-fritzbox
+make check
 ```
 
-For concurrency or lifecycle changes also run `go test -race -count=1 ./receiver/...`.
+`make help` lists the individual targets (`lint`, `test`, `test-race`, `vuln`,
+`build`, ...). Lint and vulnerability tools run through `go run` at pinned
+versions, so no separate installation is needed.
+
+## Tests without a router
+
+`internal/fakebox` is an in-memory TR-064 device with digest authentication,
+nonce rotation, UPnP faults, and the host list. It backs two test layers:
+
+- `receiver/fritzbox/integration_test.go` runs the receiver through the real
+  scraper controller, so it covers what the controller actually exports.
+- `cmd/otelcol-fritzbox/main_test.go` runs the whole distribution against the
+  fake device and an OTLP/HTTP sink, and validates every example config.
+
+Model new device behavior (a missing service, a faulting action) by adjusting
+the `fakebox.Box` fields in a test rather than by adding a real-device fixture.
 
 ## Metric schema changes
 
@@ -24,6 +37,14 @@ git diff   # inspect the generated changes
 
 CI fails if the generated code is stale.
 
+## Collector dependencies
+
+`go.mod` and `example/builder-config.yaml` must pin the same Collector
+versions, and every component in the builder config must be registered in
+`cmd/otelcol-fritzbox/components.go`. `make builder-check` enforces both.
+Dependabot groups Collector updates but does not edit the builder config, so
+update it in the same pull request.
+
 ## Commits and PRs
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/) with short,
@@ -33,10 +54,19 @@ CI fails if the generated code is stale.
   regression test that fails on the old behavior where practical.
 - No credentials, captured private device data, or build artifacts in commits.
 
+## Issues and labels
+
+Issues use forms (bug report, feature request, device report) that apply a
+type label and `needs-triage`. The Label workflow then adds `area/*` and
+`connection/*` labels from `.github/issue-labeler.yml` (regex on title and
+body), and pull requests get `area/*` labels from `.github/labeler.yml`
+(changed paths). Labels are only added, never removed, so maintainers can
+correct them by hand.
+
 ## Device coverage
 
 The support matrix in the README grows through user reports. If you tested a
-device, open an issue or PR with: model, FRITZ!OS version, connection type,
+device, open a device report with: model, FRITZ!OS version, connection type,
 which metric groups worked, and any anomalies.
 
 ## Releases

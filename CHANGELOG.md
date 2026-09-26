@@ -4,6 +4,34 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- A failing metric group no longer drops the whole scrape. Real failures are
+  reported as partial scrape errors, so the collector still exports metrics
+  from unaffected groups. Before, any group error (for example running
+  without credentials) discarded every metric of that interval.
+- Actions that need credentials are skipped with a one-time warning when no
+  credentials are configured, instead of failing each scrape. Rejected
+  credentials are reported as a scrape error on every interval.
+- HTTP 401 and UPnP fault 401 (Invalid Action) are no longer conflated.
+- `fritzbox.hosts.active` is not emitted when host enumeration fails part way,
+  instead of reporting an undercount.
+
+### Added
+
+- `make check` runs the full CI suite locally (lint, race tests,
+  govulncheck, generated-code and builder-config drift, build).
+- In-memory fake Fritz!Box (`internal/fakebox`) with receiver integration
+  tests through the scraper controller and a distribution end-to-end test.
+- Issue forms, automatic issue and pull request labeling, Dependabot, pull
+  request template, and CODEOWNERS.
+
+### Changed
+
+- CI actions are pinned to commit SHAs and run with read-only permissions.
+
 ## [0.1.0] - 2026-09-07
 
 First public release. Also goes by the informal codename "VDSL Works".

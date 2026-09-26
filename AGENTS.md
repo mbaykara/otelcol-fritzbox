@@ -43,7 +43,10 @@ host-list fetch. The receiver must remain usable independently of the binary.
 | `cmd/otelcol-fritzbox/` | Distribution entry point and component factories |
 | `example/` | Collector configurations and OCB manifest |
 | `dashboard/` | Grafana dashboards consuming exported metrics |
+| `internal/fakebox/` | In-memory TR-064 device for integration tests |
 | `.github/workflows/`, `.goreleaser.yaml` | CI and release packaging |
+| `.github/ISSUE_TEMPLATE/`, `.github/*labeler.yml` | Issue forms and automatic labeling rules |
+| `Makefile`, `scripts/` | Developer and CI entry points |
 
 Use the Go version and dependency versions declared in `go.mod`. Do not infer
 the supported toolchain from potentially stale prose. The module path is
@@ -157,16 +160,18 @@ that module, not a separate module unless a dedicated `go.mod` is introduced.
 For Go behavior changes, run the relevant focused tests followed by:
 
 ```sh
-go test ./...
-go vet ./...
-go build ./cmd/otelcol-fritzbox
+make check
 ```
 
-For concurrency, lifecycle, or shared-state changes, also run:
+It runs generated-code freshness, builder-config drift, golangci-lint, tests
+with the race detector, govulncheck, and the binary build, the same as CI.
+Individual targets are listed by `make help`.
 
-```sh
-go test -race -count=1 ./receiver/...
-```
+Use `internal/fakebox` to reproduce device behavior without a router. Changes
+to error handling, lifecycle, or export behavior need a test that goes
+through the scraper controller (`receiver/fritzbox/integration_test.go`) or
+the full distribution (`cmd/otelcol-fritzbox/main_test.go`), not only a
+direct `scrape` call.
 
 For metric schema changes, regenerate and inspect the diff. Repeat generation
 and confirm it introduces no further changes. Follow the freshness check in
