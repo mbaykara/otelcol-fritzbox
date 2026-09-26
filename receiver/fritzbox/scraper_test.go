@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
+	"github.com/mbaykara/otelcol-fritzbox/internal/fakebox"
 	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/metadata"
 	"github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox/internal/tr064"
 )
@@ -62,83 +63,18 @@ func (f *fakeTR064) respond(serviceType, action string) (map[string]string, erro
 	return nil, &tr064.Error{Code: 401, Description: "Invalid Action"}
 }
 
-// dslBoxServices models a DSL Fritz!Box (like the dev box).
-var dslBoxServices = []tr064.Service{
-	{Type: "urn:dslforum-org:service:DeviceInfo:1", ControlURL: "/upnp/control/deviceinfo"},
-	{Type: "urn:dslforum-org:service:WANCommonInterfaceConfig:1", ControlURL: "/upnp/control/wancommonifconfig1"},
-	{Type: "urn:dslforum-org:service:WANDSLInterfaceConfig:1", ControlURL: "/upnp/control/wandslifconfig1"},
-	{Type: "urn:dslforum-org:service:WANIPConnection:1", ControlURL: "/upnp/control/wanipconn1"},
-	{Type: "urn:dslforum-org:service:WLANConfiguration:1", ControlURL: "/upnp/control/wlanconfig1"},
-	{Type: "urn:dslforum-org:service:WLANConfiguration:2", ControlURL: "/upnp/control/wlanconfig2"},
-	{Type: "urn:dslforum-org:service:WLANConfiguration:3", ControlURL: "/upnp/control/wlanconfig3"},
-	{Type: "urn:dslforum-org:service:Hosts:1", ControlURL: "/upnp/control/hosts"},
-}
+// dslBoxServices and dslBoxResponses come from the fake device used by the
+// integration tests, so both test layers model the same DSL box.
+var dslBoxServices = func() []tr064.Service {
+	var out []tr064.Service
+	for _, svc := range fakebox.NewDSL().Services {
+		out = append(out, tr064.Service{Type: svc.Type, ControlURL: svc.ControlURL})
+	}
+	return out
+}()
 
 func dslBoxResponses() map[string]map[string]string {
-	return map[string]map[string]string{
-		"urn:dslforum-org:service:DeviceInfo:1#GetInfo": {
-			"NewModelName":       "FRITZ!Box 7590",
-			"NewSerialNumber":    "X123456789012",
-			"NewSoftwareVersion": "154.08.25",
-			"NewUpTime":          "86400",
-		},
-		"urn:dslforum-org:service:WANCommonInterfaceConfig:1#GetCommonLinkProperties": {
-			"NewPhysicalLinkStatus":         "Up",
-			"NewLayer1DownstreamMaxBitRate": "250000000",
-			"NewLayer1UpstreamMaxBitRate":   "50000000",
-		},
-		"urn:dslforum-org:service:WANCommonInterfaceConfig:1#GetTotalBytesSent":       {"NewTotalBytesSent": "1000000"},
-		"urn:dslforum-org:service:WANCommonInterfaceConfig:1#GetTotalBytesReceived":   {"NewTotalBytesReceived": "5000000"},
-		"urn:dslforum-org:service:WANCommonInterfaceConfig:1#GetTotalPacketsSent":     {"NewTotalPacketsSent": "8000"},
-		"urn:dslforum-org:service:WANCommonInterfaceConfig:1#GetTotalPacketsReceived": {"NewTotalPacketsReceived": "9000"},
-		"urn:dslforum-org:service:WANIPConnection:1#GetStatusInfo": {
-			"NewConnectionStatus": "Connected",
-			"NewUptime":           "3600",
-		},
-		"urn:dslforum-org:service:WANDSLInterfaceConfig:1#GetInfo": {
-			"NewDownstreamCurrRate":    "200000",
-			"NewUpstreamCurrRate":      "40000",
-			"NewDownstreamMaxRate":     "220000",
-			"NewUpstreamMaxRate":       "45000",
-			"NewDownstreamNoiseMargin": "120",
-			"NewUpstreamNoiseMargin":   "95",
-			"NewDownstreamAttenuation": "180",
-			"NewUpstreamAttenuation":   "120",
-		},
-		"urn:dslforum-org:service:WANDSLInterfaceConfig:1#GetStatisticsTotal": {
-			"NewFECErrors":           "10",
-			"NewATUCFECErrors":       "20",
-			"NewCRCErrors":           "30",
-			"NewATUCCRCErrors":       "40",
-			"NewHECErrors":           "5",
-			"NewATUCHECErrors":       "6",
-			"NewErroredSecs":         "100",
-			"NewSeverelyErroredSecs": "7",
-		},
-		"urn:dslforum-org:service:WLANConfiguration:1#GetInfo": {
-			"NewEnable": "1", "NewStatus": "Up", "NewChannel": "6", "NewSSID": "HomeNet",
-		},
-		"urn:dslforum-org:service:WLANConfiguration:1#GetTotalAssociations": {"NewTotalAssociations": "12"},
-		"urn:dslforum-org:service:WLANConfiguration:1#GetStatistics": {
-			"NewTotalPacketsSent": "111", "NewTotalPacketsReceived": "222",
-		},
-		"urn:dslforum-org:service:WLANConfiguration:2#GetInfo": {
-			"NewEnable": "1", "NewStatus": "Up", "NewChannel": "36", "NewSSID": "HomeNet5",
-		},
-		"urn:dslforum-org:service:WLANConfiguration:2#GetTotalAssociations": {"NewTotalAssociations": "4"},
-		"urn:dslforum-org:service:WLANConfiguration:2#GetStatistics": {
-			"NewTotalPacketsSent": "333", "NewTotalPacketsReceived": "444",
-		},
-		"urn:dslforum-org:service:WLANConfiguration:3#GetInfo": {
-			"NewEnable": "0", "NewStatus": "Disabled", "NewChannel": "0", "NewSSID": "Guest",
-		},
-		"urn:dslforum-org:service:WLANConfiguration:3#GetTotalAssociations": {"NewTotalAssociations": "0"},
-		"urn:dslforum-org:service:WLANConfiguration:3#GetStatistics": {
-			"NewTotalPacketsSent": "0", "NewTotalPacketsReceived": "0",
-		},
-		"urn:dslforum-org:service:Hosts:1#GetHostNumberOfEntries":   {"NewHostNumberOfEntries": "74"},
-		"urn:dslforum-org:service:Hosts:1#X_AVM-DE_GetHostListPath": {"NewX_AVM-DE_HostListPath": "/devicehostlist.lua?sid=fake"},
-	}
+	return fakebox.NewDSL().Responses
 }
 
 func newTestScraper(t *testing.T, fake *fakeTR064) *fritzboxScraper {
@@ -265,10 +201,10 @@ func TestScrapeFullDSLBox(t *testing.T) {
 		t.Errorf("hw.errors fec transmit = %d, want 20", p.intVal)
 	}
 	// WLAN clients per radio.
-	if p := findPoint(t, got["fritzbox.wlan.clients"], map[string]string{"hw.id": "fritzbox.wlan1", "ssid": "HomeNet"}); p.intVal != 12 {
+	if p := findPoint(t, got["fritzbox.wlan.clients"], map[string]string{"hw.id": "fritzbox.wlan1", "ssid": "ExampleNet"}); p.intVal != 12 {
 		t.Errorf("wlan1 clients = %d, want 12", p.intVal)
 	}
-	if p := findPoint(t, got["fritzbox.wlan.clients"], map[string]string{"hw.id": "fritzbox.wlan2", "ssid": "HomeNet5"}); p.intVal != 4 {
+	if p := findPoint(t, got["fritzbox.wlan.clients"], map[string]string{"hw.id": "fritzbox.wlan2", "ssid": "ExampleNet5"}); p.intVal != 4 {
 		t.Errorf("wlan2 clients = %d, want 4", p.intVal)
 	}
 	// Disabled guest radio still reports up=0.
@@ -276,8 +212,8 @@ func TestScrapeFullDSLBox(t *testing.T) {
 		t.Errorf("wlan3 up = %d, want 0", p.intVal)
 	}
 	// Hosts.
-	if p := findPoint(t, got["fritzbox.hosts.total"], nil); p.intVal != 74 {
-		t.Errorf("hosts.total = %d, want 74", p.intVal)
+	if p := findPoint(t, got["fritzbox.hosts.total"], nil); p.intVal != 2 {
+		t.Errorf("hosts.total = %d, want 2", p.intVal)
 	}
 	// Optional metrics must be absent by default.
 	if _, ok := got["fritzbox.hosts.active"]; ok {
