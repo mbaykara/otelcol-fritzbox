@@ -159,29 +159,18 @@ that module, not a separate module unless a dedicated `go.mod` is introduced.
 
 ## Verification and delivery
 
-For Go behavior changes, run the relevant focused tests followed by:
+For Go behavior changes, run the relevant focused tests followed by
+`make check`. Run the image and chart targets from the table in
+`CONTRIBUTING.md` when those parts change.
 
-```sh
-make check
-```
-
-It runs generated-code freshness, builder-config drift, golangci-lint, tests
-with the race detector, govulncheck, and the binary build, the same as CI.
-Individual targets are listed by `make help`.
-
-Use `internal/fakebox` to reproduce device behavior without a router. Changes
-to error handling, lifecycle, or export behavior need a test that goes
-through the scraper controller (`receiver/fritzbox/integration_test.go`) or
-the full distribution (`cmd/otelcol-fritzbox/main_test.go`), not only a
-direct `scrape` call.
+Changes to error handling, lifecycle, or export behavior need a test through
+the scraper controller or the full distribution (both use `internal/fakebox`),
+not only a direct `scrape` call. Keep the chart at one replica: a second pod
+duplicates every scrape and export.
 
 For metric schema changes, regenerate and inspect the diff. Repeat generation
-and confirm it introduces no further changes. Follow the freshness check in
-`.github/workflows/ci.yml`. Format changed Go files and run `git diff --check`.
-For Dockerfile or bundled-config changes, also run `make image-smoke`. For
-chart changes, run `make chart-lint`, and `make chart-test` when templates
-change what is deployed. Keep the chart at one replica: a second pod
-duplicates every scrape and export.
+and confirm it introduces no further changes. Format changed Go files and run
+`git diff --check`.
 For documentation-only changes, check accuracy, references, and the diff;
 compiling the entire collector is not required.
 

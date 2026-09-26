@@ -30,13 +30,8 @@ Without `otlp.endpoint` the chart uses the debug exporter, so metrics appear
 in the pod log. Without Fritz!Box credentials only unauthenticated groups
 (host counts) are collected.
 
-Charts are signed with cosign keyless signing:
-
-```sh
-cosign verify ghcr.io/mbaykara/charts/otelcol-fritzbox:<version> \
-  --certificate-identity-regexp '^https://github.com/mbaykara/otelcol-fritzbox/.github/workflows/release.yml@refs/tags/v' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com
-```
+The chart is signed; see
+[signature verification](https://github.com/mbaykara/otelcol-fritzbox#container-image).
 
 ## Values
 
@@ -60,8 +55,6 @@ cosign verify ghcr.io/mbaykara/charts/otelcol-fritzbox:<version> \
 | `serviceMonitor.enabled` | `false` | ServiceMonitor for the collector's own metrics on `:8888` |
 | `podSecurityContext` / `securityContext` | non-root 65532, read-only root, no capabilities, RuntimeDefault seccomp | Compatible with the `restricted` Pod Security Standard |
 
-`values.schema.json` validates the values, and the templates reject
-half-set credentials, basic auth without credentials, and two CA sources.
 
 ## Adding exporters or processors
 

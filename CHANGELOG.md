@@ -6,54 +6,27 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Fixed
-
-- Receiver start no longer waits for service discovery. An unreachable device
-  delayed collector startup by up to `timeout`; discovery now runs on the
-  first scrape and retries on every scrape.
-- A failing metric group no longer drops the whole scrape. Real failures are
-  reported as partial scrape errors, so the collector still exports metrics
-  from unaffected groups. Before, any group error (for example running
-  without credentials) discarded every metric of that interval.
-- Actions that need credentials are skipped with a one-time warning when no
-  credentials are configured, instead of failing each scrape. Rejected
-  credentials are reported as a scrape error on every interval.
-- HTTP 401 and UPnP fault 401 (Invalid Action) are no longer conflated.
-- `fritzbox.hosts.active` is not emitted when host enumeration fails part way,
-  instead of reporting an undercount.
-
 ### Added
 
-- Helm chart `oci://ghcr.io/mbaykara/charts/otelcol-fritzbox`: single replica
-  with Recreate strategy, credentials from existing or chart-managed Secrets,
-  optional device CA for https, OTLP/HTTP with basic auth, config deep-merge,
-  health probes, self-telemetry Service and optional ServiceMonitor, values
-  schema, `restricted` Pod Security compatible. Signed with cosign.
-- Container image `ghcr.io/mbaykara/otelcol-fritzbox` for `linux/amd64`,
-  `linux/arm64`, and `linux/arm/v7`: distroless, non-root, production config
-  bundled, SBOM and provenance attestations, cosign keyless signature.
+- Container image `ghcr.io/mbaykara/otelcol-fritzbox` (amd64, arm64, arm/v7), signed, with SBOM and provenance.
+- Helm chart `oci://ghcr.io/mbaykara/charts/otelcol-fritzbox`, signed.
 - `linux_armv7` release binaries.
-- `tls` receiver settings for `https://` endpoints (port 49443), including
-  `ca_file` for the certificate exported from the device. TLS settings on an
-  `http://` endpoint are rejected, as are schemes other than http and https.
-- Distribution includes the `health_check` extension and the
-  `memory_limiter` processor.
-- `example/collector-config-production.yaml`: memory limiter, batch, health
-  check, and OTLP/HTTP with basic auth, configured through environment
-  variables. Replaces `collector-config-e2e.yaml`, which hardcoded a Grafana
-  Cloud endpoint and instance ID.
-- `make check` runs the full CI suite locally (lint, race tests,
-  govulncheck, generated-code and builder-config drift, build).
-- In-memory fake Fritz!Box (`internal/fakebox`) with receiver integration
-  tests through the scraper controller and a distribution end-to-end test.
-- Issue forms, automatic issue and pull request labeling, Dependabot, pull
-  request template, and CODEOWNERS.
+- `tls` receiver settings for `https://` endpoints.
+- `health_check` extension and `memory_limiter` processor in the distribution.
+- `example/collector-config-production.yaml`, replacing `collector-config-e2e.yaml`.
 
 ### Changed
 
-- `password` is a `configopaque.String` and is redacted when the collector
-  prints its configuration.
-- CI actions are pinned to commit SHAs and run with read-only permissions.
+- `password` is redacted when the collector prints its configuration.
+- Endpoints must use http or https; TLS settings on http are rejected.
+
+### Fixed
+
+- A failing metric group no longer drops the metrics of every other group.
+- Missing credentials skip protected groups with one warning instead of failing each scrape.
+- HTTP 401 and UPnP fault 401 are no longer conflated.
+- `fritzbox.hosts.active` is not emitted from an incomplete host enumeration.
+- An unreachable device no longer delays collector startup.
 
 ## [0.1.0] - 2026-09-07
 

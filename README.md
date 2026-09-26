@@ -80,8 +80,9 @@ docker run -d --name otelcol-fritzbox --restart unless-stopped \
 Mount your own file over `/etc/otelcol-fritzbox/config.yaml` to replace the
 configuration. `:13133` is the `health_check` endpoint.
 
-Images carry an SBOM and SLSA provenance attestation and are signed with
-cosign keyless signing:
+Images and charts carry cosign keyless signatures; images also carry an SBOM
+and SLSA provenance attestation. Verify with (for the chart, use
+`ghcr.io/mbaykara/charts/otelcol-fritzbox:<version>`):
 
 ```sh
 cosign verify ghcr.io/mbaykara/otelcol-fritzbox:<version> \
@@ -89,26 +90,11 @@ cosign verify ghcr.io/mbaykara/otelcol-fritzbox:<version> \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-Build locally with `make image`, or `make image-smoke` to also run the smoke
-test in `scripts/image-smoke.sh`.
-
 ## Kubernetes
 
 A Helm chart is published to `oci://ghcr.io/mbaykara/charts/otelcol-fritzbox`
-with every release after 0.1.0. It runs a single replica per router, reads
-credentials from existing Secrets, and passes the `restricted` Pod Security
-Standard:
-
-```sh
-helm install fritzbox oci://ghcr.io/mbaykara/charts/otelcol-fritzbox --version <version> \
-  --set fritzbox.endpoint=http://192.168.178.1:49000 \
-  --set fritzbox.existingSecret=fritzbox \
-  --set otlp.endpoint=https://otlp-gateway-prod-eu-west-2.grafana.net/otlp \
-  --set otlp.existingSecret=grafana-cloud
-```
-
-See [charts/otelcol-fritzbox/README.md](charts/otelcol-fritzbox/README.md) for
-secrets, TLS, values, and signature verification.
+with every release after 0.1.0. Install, secrets, TLS, and values:
+[charts/otelcol-fritzbox/README.md](charts/otelcol-fritzbox/README.md).
 
 ## Configuration
 
@@ -283,30 +269,10 @@ Expected to work but **not verified**: other 75xx/56xx/66xx models on
 FRITZ!OS 7.5+, cable and fiber variants (DSL group auto-skips), and
 Fritz!Repeater devices (subset: device, wlan, hosts). Reports welcome.
 
-## Development
-
-Requires the Go version in `go.mod`.
-
-```sh
-make check      # everything CI runs: lint, race tests, govulncheck, drift checks, build
-make generate   # regenerate mdatagen code from metadata.yaml
-make help       # all targets
-```
-
-Tests run against `internal/fakebox`, an in-memory TR-064 device, so no
-router is needed. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-`example/` contains an OCB manifest and collector configs:
-
-```sh
-cd example
-go tool go.opentelemetry.io/collector/cmd/builder --config builder-config.yaml
-./otelcol-fritzbox/otelcol-fritzbox --config collector-config.yaml
-```
-
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately per
+Checks, tests, and conventions: [CONTRIBUTING.md](CONTRIBUTING.md). Report
+security issues privately per
 [SECURITY.md](SECURITY.md).
 
 ## License
