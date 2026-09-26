@@ -19,8 +19,8 @@ is exposed under `fritzbox.*`.
 **1. Download and verify the collector** (or [build from source](#development)):
 
 ```sh
-# pick your platform: darwin_arm64, darwin_amd64, linux_amd64, linux_arm64, linux_armv7 (from the next release)
-VERSION=0.1.0
+# pick your platform: darwin_arm64, darwin_amd64, linux_amd64, linux_arm64, linux_armv7
+VERSION=0.2.0
 PLATFORM=darwin_arm64
 curl -sLO "https://github.com/mbaykara/otelcol-fritzbox/releases/download/v${VERSION}/otelcol-fritzbox_${VERSION}_${PLATFORM}.tar.gz"
 curl -sLO "https://github.com/mbaykara/otelcol-fritzbox/releases/download/v${VERSION}/otelcol-fritzbox_${VERSION}_checksums.txt"
