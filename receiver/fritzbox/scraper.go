@@ -66,7 +66,7 @@ func newScraper(cfg *Config, settings receiver.Settings) *fritzboxScraper {
 // start initializes the TR-064 client and discovers device services.
 func (s *fritzboxScraper) start(ctx context.Context, _ component.Host) error {
 	if s.client == nil {
-		client, err := newTR064Client(s.cfg)
+		client, err := newTR064Client(ctx, s.cfg)
 		if err != nil {
 			return err
 		}
