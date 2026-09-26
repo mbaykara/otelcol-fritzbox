@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -76,7 +77,11 @@ func TestCollectorEndToEnd(t *testing.T) {
 	backend := httptest.NewServer(sink)
 	t.Cleanup(backend.Close)
 
+	healthAddr := freeAddr(t)
 	cfg := fmt.Sprintf(`
+extensions:
+  health_check:
+    endpoint: %s
 receivers:
   fritzbox:
     endpoint: %s
@@ -85,6 +90,12 @@ receivers:
     collection_interval: 200ms
     initial_delay: 0s
     timeout: 200ms
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 200
+  batch:
+    timeout: 100ms
 exporters:
   otlp_http:
     endpoint: %s
@@ -92,6 +103,7 @@ exporters:
     retry_on_failure:
       enabled: false
 service:
+  extensions: [health_check]
   telemetry:
     logs:
       level: warn
@@ -100,8 +112,9 @@ service:
   pipelines:
     metrics:
       receivers: [fritzbox]
+      processors: [memory_limiter, batch]
       exporters: [otlp_http]
-`, device.URL, box.Username, box.Password, backend.URL)
+`, healthAddr, device.URL, box.Username, box.Password, backend.URL)
 	path := filepath.Join(t.TempDir(), "config.yaml")
 	require.NoError(t, os.WriteFile(path, []byte(cfg), 0o600))
 
@@ -126,6 +139,25 @@ service:
 		return sink.has("fritzbox.dsl.rate.current") && sink.has("hw.network.io") && sink.has("fritzbox.hosts.total")
 	}, 20*time.Second, 50*time.Millisecond, "metrics did not reach the OTLP backend")
 	assert.Positive(t, box.Stats().Authorized)
+
+	require.Eventually(t, func() bool {
+		resp, err := http.Get("http://" + healthAddr + "/")
+		if err != nil {
+			return false
+		}
+		_ = resp.Body.Close()
+		return resp.StatusCode == http.StatusOK
+	}, 10*time.Second, 50*time.Millisecond, "health_check did not report healthy")
+}
+
+// freeAddr returns a loopback address with a currently unused port.
+func freeAddr(t *testing.T) string {
+	t.Helper()
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	addr := l.Addr().String()
+	require.NoError(t, l.Close())
+	return addr
 }
 
 // TestExampleConfigsValidate checks that every example collector config is
@@ -133,7 +165,9 @@ service:
 func TestExampleConfigsValidate(t *testing.T) {
 	t.Setenv("FRITZBOX_USERNAME", "user")
 	t.Setenv("FRITZBOX_PASSWORD", "password")
-	t.Setenv("GCOM_TOKEN", "token")
+	t.Setenv("OTLP_ENDPOINT", "https://otlp.example.com/otlp")
+	t.Setenv("OTLP_USERNAME", "123456")
+	t.Setenv("OTLP_PASSWORD", "token")
 
 	paths, err := filepath.Glob("../../example/collector-config*.yaml")
 	require.NoError(t, err)

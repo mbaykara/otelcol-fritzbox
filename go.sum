@@ -314,6 +314,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusrem
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.160.0/go.mod h1:xY4/T29xBGe/yMqIrqVPEbZTnzLWjLFF4QEynfG/uVk=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.160.0 h1:cgDV7LFxRGa/lC52iVMpIX4pYtq6FVsIOLVx1AC8sbc=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.160.0/go.mod h1:um4B9TTiYTCw47eZwG1MGRFj36SfATsbqjfzE/HeKck=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.160.0 h1:+Wc4w1ubs+fjarbTjuIwEm+mGwtz0h5P3Rx6QKL65cs=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.160.0/go.mod h1:A5vpQ23oRdYwmz+I4Ps9qD8o64IE5XmFtsfik4v4Puw=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/basicauth v0.160.0 h1:0Q488sAzqTIns1Lh+hNXRbOHCflNjPad/d4bz+LZF78=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/basicauth v0.160.0/go.mod h1:OXrvJMuleaYsMyhDLxGR4D3SGhZiCqHwNP7Q2ksxNY0=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/credentialsfile v0.160.0 h1:+Bv4gqVDkjmJ0Na18DNVjKlgvI2s73xU/Ftt5ltYWCw=
@@ -322,8 +324,12 @@ github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.160
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.160.0/go.mod h1:sFWqV6HHAg30rwSjwyp1lXqTxhMBYCSVZDeg/IYk8yY=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.160.0 h1:bgUTLilI1DRaRi8wII9aJu0yQZuS/jFu0RBf6EL+Sfw=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.160.0/go.mod h1:PcugtOWj/c+J4hhVBcXfcM4mv+R5vD/mKJW+hW1x8WM=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck v0.160.0 h1:SuW/UQn3F3t69saZPcIzpgsRBsOR9JtNhx1jexm9cpY=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck v0.160.0/go.mod h1:rH/GP010UQ1N22CRKEF3gwFpqRCcLpoo/u4Fuwe0mCs=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.160.0 h1:PCyI0uR12OkHyfvuEofPaO8hxgXObQez7dcGf+YPY4M=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.160.0/go.mod h1:YuowvBw0jwmBgZw3SPGSVR/FaaZ4xgNvoH9AUpIPMgs=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.160.0 h1:kvrSOaF4BSdjPN7TcqyRbdwShH0Ox87DpxDTeeD5kf0=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.160.0/go.mod h1:6SbdXJxinPqEg06k8BICRxYtXzit4kKLMlfccFFqyBI=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.160.0 h1:fUSciv4GAOU2/JydxwKzIc2A83pYyBGZsWek4sjL7TI=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.160.0/go.mod h1:XoGw13IaOB9E6lQiadE2Nhwdqj8eqfS/smwItgqSNb4=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheusremotewrite v0.160.0 h1:Ca0PIDZSglipcS6NKohU436PgSLSfIWGXlm42InzeQ4=
@@ -532,6 +538,8 @@ go.opentelemetry.io/collector/internal/componentalias v0.160.0 h1:rDRD1s22Z13Q9Y
 go.opentelemetry.io/collector/internal/componentalias v0.160.0/go.mod h1:vfDgm9skzaGSDWDJgZl3E5/J6MXY3pnWiXnda4NA3/k=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.160.0 h1:L4KoduejWKVMobesmKCjkCNj27M5OuMZInaw01nrQOs=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.160.0/go.mod h1:TWG2ZZy2O2B9usOE4POz5HkIsjB3X0AmcuR8c2Y036g=
+go.opentelemetry.io/collector/internal/memorylimiter v0.160.0 h1:OarWHi/5hphIPpPQpoe8JKuFhZfUred5lHcancD0jjc=
+go.opentelemetry.io/collector/internal/memorylimiter v0.160.0/go.mod h1:Wm6QiPa/4VrCORnS79I0G0XGEsZhUlNnqygAeK7F8ZQ=
 go.opentelemetry.io/collector/internal/schemagen v0.160.0 h1:BLfq1wn7SGX9UDJ11i6dVDvhT5OEOjimEhRjQ7j+6jk=
 go.opentelemetry.io/collector/internal/schemagen v0.160.0/go.mod h1:1HrwvM2tZIwOJF+tx6TwgflbICUorE89k2tyaiMsiZY=
 go.opentelemetry.io/collector/internal/sharedcomponent v0.160.0 h1:Dl/jBWtkLzxcvDS8bzG+AUkclIGe4iamuS4idMyBh+0=
@@ -558,6 +566,12 @@ go.opentelemetry.io/collector/processor v1.66.0 h1:oNsicM3SYORpR9IzqHD8rnMpasuXI
 go.opentelemetry.io/collector/processor v1.66.0/go.mod h1:L/McJZAaCC1LtkDS9SXd65SL7fGV2MrI8sK6CvisOFY=
 go.opentelemetry.io/collector/processor/batchprocessor v0.160.0 h1:alsB/MHGCaBLo0a1nD8uWNdTkZ195NGKotMXJ5sfGUM=
 go.opentelemetry.io/collector/processor/batchprocessor v0.160.0/go.mod h1:rQR1dzfHBvK2TvegyOKBFHJ7e2QAOKXII3MiXSa65tI=
+go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.160.0 h1:fu4qPOeEaje83SxD+xO0tcuOcA2vlcF/qbjN0LT0T94=
+go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.160.0/go.mod h1:0Dg2X+MCpap9W9IG49e+88pPdB3z2BErgHK3eU86NFg=
+go.opentelemetry.io/collector/processor/processorhelper v0.160.0 h1:ziKABIE/BEQ9hkivOUEpjKYC5hDPFwylKiBwQqvOfmA=
+go.opentelemetry.io/collector/processor/processorhelper v0.160.0/go.mod h1:FIyFZDYU08OcYonDgY9HYYpKOfqqyRZI+jysEr/xegI=
+go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper v0.160.0 h1:3EW51VSdk0tb03qOyE9v/TAUyzNIaFlA9pR9cbjpk2I=
+go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper v0.160.0/go.mod h1:Q+dHxJMKATD30zbry6X/xV9Tp4lFpiSLiHCfNZmZtzU=
 go.opentelemetry.io/collector/processor/processortest v0.160.0 h1:UpuV/guqpBd4TD8J3yim7pbOGO4tze1RSfu3/tEq598=
 go.opentelemetry.io/collector/processor/processortest v0.160.0/go.mod h1:dZHObCxq4fFslWISI2fGK8vLZ+aQFyQv7h1d+5Wv6nE=
 go.opentelemetry.io/collector/processor/xprocessor v0.160.0 h1:3bvK03H90nsPjS/Lh0XDaXm1/vGOxUCdNNZ/HPW4OcI=
