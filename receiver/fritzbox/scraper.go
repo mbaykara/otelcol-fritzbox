@@ -63,7 +63,9 @@ func newScraper(cfg *Config, settings receiver.Settings) *fritzboxScraper {
 	}
 }
 
-// start initializes the TR-064 client and discovers device services.
+// start initializes the TR-064 client. Service discovery happens on the
+// first scrape and is retried on every scrape until it succeeds, so an
+// unreachable device neither fails nor delays collector startup.
 func (s *fritzboxScraper) start(ctx context.Context, _ component.Host) error {
 	if s.client == nil {
 		client, err := newTR064Client(ctx, s.cfg)
@@ -71,11 +73,6 @@ func (s *fritzboxScraper) start(ctx context.Context, _ component.Host) error {
 			return err
 		}
 		s.client = client
-	}
-	// Discovery failure must not abort startup: the device may be temporarily
-	// unreachable. The first scrape retries discovery.
-	if err := s.discover(ctx); err != nil {
-		s.logger.Warn("fritzbox: initial service discovery failed, will retry on first scrape", zap.Error(err))
 	}
 	return nil
 }

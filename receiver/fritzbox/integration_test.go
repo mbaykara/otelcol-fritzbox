@@ -3,6 +3,7 @@ package fritzbox
 import (
 	"context"
 	"encoding/pem"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -232,4 +233,34 @@ func TestIntegrationHTTPSRejectsUnknownCertificate(t *testing.T) {
 	for _, m := range sink.AllMetrics() {
 		assert.Zero(t, m.DataPointCount())
 	}
+}
+
+// Startup must not wait for the device: the collector starts all components
+// sequentially, so a blocking discovery would delay the whole pipeline.
+func TestIntegrationStartDoesNotBlockOnUnresponsiveDevice(t *testing.T) {
+	block := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-block:
+		case <-r.Context().Done():
+		}
+	}))
+	t.Cleanup(func() {
+		close(block)
+		srv.Close()
+	})
+
+	cfg := NewFactory().CreateDefaultConfig().(*Config)
+	cfg.Endpoint = srv.URL
+	cfg.ScraperControllerSettings.CollectionInterval = time.Hour
+	cfg.ScraperControllerSettings.InitialDelay = time.Hour
+	cfg.ScraperControllerSettings.Timeout = 5 * time.Second
+
+	rcv, err := NewFactory().CreateMetrics(context.Background(), receivertest.NewNopSettings(metadata.Type), cfg, new(consumertest.MetricsSink))
+	require.NoError(t, err)
+
+	started := time.Now()
+	require.NoError(t, rcv.Start(context.Background(), componenttest.NewNopHost()))
+	assert.Less(t, time.Since(started), time.Second, "Start waited for the device")
+	require.NoError(t, rcv.Shutdown(context.Background()))
 }
