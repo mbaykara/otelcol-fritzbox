@@ -57,6 +57,6 @@ func defaultConfig() *Config {
 	return &Config{
 		Endpoint:                  "http://fritz.box:49000",
 		ScraperControllerSettings: controllerCfg,
-		MetricsBuilderConfig:      metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig:      metadata.NewDefaultMetricsBuilderConfig(),
 	}
 }

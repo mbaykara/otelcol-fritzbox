@@ -1,0 +1,22 @@
+# Path rules for .github/workflows/label.yml (actions/labeler).
+area/receiver:
+  - changed-files:
+      - any-glob-to-any-file: ["receiver/**", "internal/**"]
+area/distribution:
+  - changed-files:
+      - any-glob-to-any-file: ["cmd/**", "example/**", ".goreleaser.yaml"]
+area/image:
+  - changed-files:
+      - any-glob-to-any-file: ["Dockerfile", ".dockerignore"]
+area/helm:
+  - changed-files:
+      - any-glob-to-any-file: ["charts/**"]
+area/dashboard:
+  - changed-files:
+      - any-glob-to-any-file: ["dashboard/**"]
+area/ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", "Makefile", ".golangci.yml"]
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md", "specs/**"]

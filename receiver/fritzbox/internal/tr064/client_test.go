@@ -2,6 +2,7 @@ package tr064
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -125,8 +126,8 @@ func TestCallSOAPFault(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	trErr, ok := err.(*Error)
-	if !ok {
+	var trErr *Error
+	if !errors.As(err, &trErr) {
 		t.Fatalf("expected *Error, got %T: %v", err, err)
 	}
 	if trErr.Code != 401 || trErr.Description != "Invalid Action" {
@@ -207,9 +208,12 @@ func TestCallUnauthorizedWithoutCredentials(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	trErr, ok := err.(*Error)
-	if !ok || trErr.Code != http.StatusUnauthorized {
-		t.Fatalf("expected 401 *Error, got %T: %v", err, err)
+	if !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("expected ErrUnauthorized, got %T: %v", err, err)
+	}
+	var trErr *Error
+	if errors.As(err, &trErr) {
+		t.Fatalf("HTTP 401 must not be reported as UPnP fault %d", trErr.Code)
 	}
 }
 

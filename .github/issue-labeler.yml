@@ -1,0 +1,22 @@
+# Regex rules for .github/workflows/label.yml (github/issue-labeler).
+# Each rule is a JavaScript regex in /pattern/flags form, matched against
+# the issue title and body. Labels are only added, never removed.
+# Issue form answers render below their "### <label>" heading.
+area/helm:
+  - '/\b(helm|chart|values\.ya?ml|kubernetes|k8s)\b/i'
+area/image:
+  - '/\b(docker(file)?|container image|ghcr\.io|podman|oci image)\b/i'
+area/dashboard:
+  - '/\bdashboards?\b/i'
+area/distribution:
+  - '/(collector distribution|release binary|\bocb\b|builder-config|\bexporters?\b|\bprocessors?\b)/i'
+area/receiver:
+  - '/(tr-?064|\bsoap\b|\bscrap(e|es|ing|er)\b|digest auth|### Area\s+Receiver metrics)/i'
+connection/dsl:
+  - '/### Connection type\s+DSL\b/'
+connection/cable:
+  - '/### Connection type\s+Cable\b/'
+connection/fiber:
+  - '/### Connection type\s+Fiber\b/'
+connection/mobile:
+  - '/### Connection type\s+LTE or 5G\b/'
