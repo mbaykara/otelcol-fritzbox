@@ -20,7 +20,16 @@ import (
 var version = "dev"
 
 func main() {
-	set := otelcol.CollectorSettings{
+	cmd := otelcol.NewCommand(settings())
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+// settings returns the collector settings of this distribution.
+func settings() otelcol.CollectorSettings {
+	return otelcol.CollectorSettings{
 		BuildInfo: component.BuildInfo{
 			Command:     "otelcol-fritzbox",
 			Description: "OpenTelemetry Collector with the Fritz!Box receiver",
@@ -38,11 +47,5 @@ func main() {
 				},
 			},
 		},
-	}
-
-	cmd := otelcol.NewCommand(set)
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
 	}
 }
