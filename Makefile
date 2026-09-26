@@ -63,7 +63,6 @@ build: ## Build the collector binary into bin/.
 	CGO_ENABLED=0 $(GO) build -trimpath -o bin/otelcol-fritzbox ./cmd/otelcol-fritzbox
 
 IMAGE ?= otelcol-fritzbox:dev
-PLATFORMS ?= linux/amd64,linux/arm64,linux/arm/v7
 
 .PHONY: image
 image: ## Build the container image for the host platform.
@@ -72,10 +71,6 @@ image: ## Build the container image for the host platform.
 .PHONY: image-smoke
 image-smoke: image ## Build the image and smoke-test it.
 	./scripts/image-smoke.sh $(IMAGE)
-
-.PHONY: image-multiarch
-image-multiarch: ## Build the image for all release platforms without loading it.
-	docker buildx build --platform $(PLATFORMS) .
 
 KIND_CLUSTER ?= otelcol-fritzbox
 # A dedicated kubeconfig keeps chart-test away from your current context.
@@ -96,10 +91,6 @@ chart-test: image ## Install the chart into a kind cluster and run helm tests.
 	kind load docker-image $(IMAGE) --name $(KIND_CLUSTER)
 	KUBECONFIG=$(KIND_KUBECONFIG) ct install --config ct.yaml --charts charts/otelcol-fritzbox \
 		--helm-extra-set-args "--set image.repository=$(firstword $(subst :, ,$(IMAGE))) --set image.tag=$(lastword $(subst :, ,$(IMAGE))) --set image.pullPolicy=Never"
-
-.PHONY: chart-test-clean
-chart-test-clean: ## Delete the kind cluster used by chart-test.
-	kind delete cluster --name $(KIND_CLUSTER) --kubeconfig $(KIND_KUBECONFIG)
 
 .PHONY: clean
 clean: ## Remove build output.

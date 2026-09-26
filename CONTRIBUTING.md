@@ -1,97 +1,62 @@
 # Contributing
 
-## Getting started
+## Checks
 
-Requires the Go version declared in `go.mod`. Run everything CI runs:
+Requires the Go version in `go.mod`. `make help` lists all targets.
 
-```sh
-make check
-```
+| Target | Runs | When |
+|---|---|---|
+| `make check` | generated-code freshness, builder-config drift, golangci-lint, race tests, govulncheck, build | every Go change |
+| `make image-smoke` | builds the image, runs `scripts/image-smoke.sh` | `Dockerfile` or bundled config changes |
+| `make chart-lint` | `helm lint`, `ct lint`, `scripts/chart-render-test.sh` | chart changes |
+| `make chart-test` | installs the chart into kind (own kubeconfig in `bin/`) and runs `helm test` | template changes |
 
-`make help` lists the individual targets (`lint`, `test`, `test-race`, `vuln`,
-`build`, ...). Lint and vulnerability tools run through `go run` at pinned
-versions, so no separate installation is needed.
+Lint and vulnerability tools run through `go run` at pinned versions. The
+image and chart targets need Docker, helm, ct, kind, and yq.
 
 ## Tests without a router
 
-`internal/fakebox` is an in-memory TR-064 device with digest authentication,
-nonce rotation, UPnP faults, and the host list. It backs two test layers:
-
-- `receiver/fritzbox/integration_test.go` runs the receiver through the real
-  scraper controller, so it covers what the controller actually exports.
-- `cmd/otelcol-fritzbox/main_test.go` runs the whole distribution against the
-  fake device and an OTLP/HTTP sink, and validates every example config.
-
-Model new device behavior (a missing service, a faulting action) by adjusting
-the `fakebox.Box` fields in a test rather than by adding a real-device fixture.
+`internal/fakebox` is an in-memory TR-064 device (digest auth, nonce rotation,
+UPnP faults, host list). The unit tests, the controller-level tests in
+`receiver/fritzbox/integration_test.go`, and the distribution test in
+`cmd/otelcol-fritzbox/main_test.go` all use it. Model device behavior by
+changing `fakebox.Box` fields in a test.
 
 ## Metric schema changes
 
-Metrics are declared in `receiver/fritzbox/metadata.yaml`. After editing,
-regenerate the code and include the result in the same commit:
-
-```sh
-go generate ./receiver/...
-git diff   # inspect the generated changes
-```
-
-CI fails if the generated code is stale.
-
-## Container image
-
-`make image-smoke` builds the image for the host platform and runs
-`scripts/image-smoke.sh` (version, bundled config validation, non-root user,
-health check). `make image-multiarch` builds every release platform. CI runs
-both on pull requests.
-
-## Helm chart
-
-`make chart-lint` runs `helm lint`, `ct lint`, and
-`scripts/chart-render-test.sh`, which renders the chart for several value
-combinations, validates each rendered collector config with the built
-binary, checks manifests with kubeconform when installed, and asserts that
-invalid values are rejected. `make chart-test` installs the chart into a kind
-cluster (with its own kubeconfig under `bin/`) and runs `helm test`;
-`make chart-test-clean` deletes the cluster. Needs helm, ct, kind, yq, and
-Docker.
-
-Add a file to `charts/otelcol-fritzbox/ci/` for every value combination that
-should be installed in CI. Keep the chart version at the placeholder; the
-release workflow sets it from the tag.
+Edit `receiver/fritzbox/metadata.yaml`, run `make generate`, and commit the
+generated result in the same change.
 
 ## Collector dependencies
 
-`go.mod` and `example/builder-config.yaml` must pin the same Collector
-versions, and every component in the builder config must be registered in
-`cmd/otelcol-fritzbox/components.go`. `make builder-check` enforces both.
-Dependabot groups Collector updates but does not edit the builder config, so
-update it in the same pull request.
+`go.mod`, `example/builder-config.yaml`, and
+`cmd/otelcol-fritzbox/components.go` must agree; `make builder-check`
+enforces it. Dependency bots do not edit the builder config, so update it in
+the same pull request.
+
+## Helm chart
+
+Add a file to `charts/otelcol-fritzbox/ci/` for each value combination CI
+should install. Leave the chart version alone; the release sets it from the
+tag.
 
 ## Commits and PRs
 
-- Use [Conventional Commits](https://www.conventionalcommits.org/) with short,
-  single-sentence messages (`feat:`, `fix:`, `docs:`, `chore:`, ...).
-- Keep changes focused; one concern per PR.
-- Tests must pass and new behavior needs a focused test. For bug fixes, add a
+- [Conventional Commits](https://www.conventionalcommits.org/), short
+  single-sentence messages.
+- One concern per PR. New behavior needs a focused test; bug fixes a
   regression test that fails on the old behavior where practical.
-- No credentials, captured private device data, or build artifacts in commits.
+- No credentials, captured device data, or build artifacts.
 
-## Issues and labels
-
-Issues use forms (bug report, feature request, device report) that apply a
-type label and `needs-triage`. The Label workflow then adds `area/*` and
-`connection/*` labels from `.github/issue-labeler.yml` (regex on title and
-body), and pull requests get `area/*` labels from `.github/labeler.yml`
-(changed paths). Labels are only added, never removed, so maintainers can
-correct them by hand.
+Issue forms add a type label and `needs-triage`; the Label workflow adds
+`area/*` labels to issues and PRs. Labels are only added, never removed.
 
 ## Device coverage
 
-The support matrix in the README grows through user reports. If you tested a
-device, open a device report with: model, FRITZ!OS version, connection type,
-which metric groups worked, and any anomalies.
+Tested a device? Open a device report so it can go into the README support
+matrix.
 
 ## Releases
 
-Releases are cut by maintainers via version tags (`v*`), which triggers the
-GoReleaser workflow. Do not push tags in PRs.
+Maintainers cut releases with `v*` tags, which build binaries, the image,
+and the chart. Do not push tags in PRs.
