@@ -1,0 +1,52 @@
+# collector-config-production.yaml - long-running deployment that exports to
+# an OTLP/HTTP backend such as Grafana Cloud. The container image and the
+# Helm chart use this configuration shape.
+#
+# Environment:
+#   FRITZBOX_ENDPOINT      default http://fritz.box:49000
+#   FRITZBOX_USERNAME      Fritz!Box user with "FRITZ!Box settings" permission
+#   FRITZBOX_PASSWORD
+#   OTLP_ENDPOINT          e.g. https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
+#   OTLP_USERNAME          basic auth user, for Grafana Cloud the instance ID
+#   OTLP_PASSWORD          basic auth password, for Grafana Cloud an access policy token
+#   HEALTH_CHECK_ENDPOINT  default localhost:13133, use 0.0.0.0:13133 in containers
+#   MEMORY_LIMIT_MIB       default 200
+#
+# Grafana Cloud converts OTLP metric names to Prometheus format
+# (fritzbox.device.uptime becomes fritzbox_device_uptime_seconds).
+extensions:
+  health_check:
+    endpoint: ${env:HEALTH_CHECK_ENDPOINT:-localhost:13133}
+  basicauth/otlp:
+    client_auth:
+      username: ${env:OTLP_USERNAME}
+      password: ${env:OTLP_PASSWORD}
+
+receivers:
+  fritzbox:
+    endpoint: ${env:FRITZBOX_ENDPOINT:-http://fritz.box:49000}
+    username: ${env:FRITZBOX_USERNAME}
+    password: ${env:FRITZBOX_PASSWORD}
+    collection_interval: 30s
+    timeout: 10s
+
+processors:
+  # First in the pipeline: refuses data before the process runs out of memory.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: ${env:MEMORY_LIMIT_MIB:-200}
+  batch:
+
+exporters:
+  otlp_http:
+    endpoint: ${env:OTLP_ENDPOINT}
+    auth:
+      authenticator: basicauth/otlp
+
+service:
+  extensions: [health_check, basicauth/otlp]
+  pipelines:
+    metrics:
+      receivers: [fritzbox]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http]

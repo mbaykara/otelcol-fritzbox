@@ -2,13 +2,17 @@ package fritzbox
 
 import (
 	"context"
+	"encoding/pem"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
@@ -27,7 +31,7 @@ func startIntegrationReceiver(t *testing.T, box *fakebox.Box, configure func(*Co
 	cfg := NewFactory().CreateDefaultConfig().(*Config)
 	cfg.Endpoint = srv.URL
 	cfg.Username = box.Username
-	cfg.Password = box.Password
+	cfg.Password = configopaque.String(box.Password)
 	cfg.ScraperControllerSettings.CollectionInterval = 200 * time.Millisecond
 	cfg.ScraperControllerSettings.InitialDelay = 0
 	cfg.ScraperControllerSettings.Timeout = 200 * time.Millisecond
@@ -167,4 +171,65 @@ func TestIntegrationDeviceUnavailableAtStart(t *testing.T) {
 		all := sink.AllMetrics()
 		return len(all) > 0 && metricNames(all[len(all)-1])["fritzbox.hosts.total"]
 	}, 10*time.Second, 10*time.Millisecond, "receiver did not recover after device came back")
+}
+
+// writeServerCA stores the test server's certificate as a PEM file, the way
+// a user stores the certificate exported from the device.
+func writeServerCA(t *testing.T, srv *httptest.Server) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "fritzbox.pem")
+	block := &pem.Block{Type: "CERTIFICATE", Bytes: srv.Certificate().Raw}
+	require.NoError(t, os.WriteFile(path, pem.EncodeToMemory(block), 0o600))
+	return path
+}
+
+func TestIntegrationHTTPSWithDeviceCertificate(t *testing.T) {
+	box := fakebox.NewDSL()
+	srv := httptest.NewTLSServer(box)
+	t.Cleanup(srv.Close)
+
+	cfg := NewFactory().CreateDefaultConfig().(*Config)
+	cfg.Endpoint = srv.URL
+	cfg.Username = box.Username
+	cfg.Password = configopaque.String(box.Password)
+	cfg.TLS.CAFile = writeServerCA(t, srv)
+	cfg.ScraperControllerSettings.CollectionInterval = 200 * time.Millisecond
+	cfg.ScraperControllerSettings.InitialDelay = 0
+	cfg.ScraperControllerSettings.Timeout = 200 * time.Millisecond
+	require.NoError(t, cfg.Validate())
+
+	sink := new(consumertest.MetricsSink)
+	rcv, err := NewFactory().CreateMetrics(context.Background(), receivertest.NewNopSettings(metadata.Type), cfg, sink)
+	require.NoError(t, err)
+	require.NoError(t, rcv.Start(context.Background(), componenttest.NewNopHost()))
+	t.Cleanup(func() { require.NoError(t, rcv.Shutdown(context.Background())) })
+
+	batches := waitForScrapes(t, sink, 1)
+	assert.True(t, metricNames(batches[0])["fritzbox.dsl.rate.current"], "authenticated group missing over https")
+}
+
+func TestIntegrationHTTPSRejectsUnknownCertificate(t *testing.T) {
+	box := fakebox.NewDSL()
+	srv := httptest.NewTLSServer(box)
+	t.Cleanup(srv.Close)
+
+	cfg := NewFactory().CreateDefaultConfig().(*Config)
+	cfg.Endpoint = srv.URL
+	cfg.ScraperControllerSettings.CollectionInterval = 200 * time.Millisecond
+	cfg.ScraperControllerSettings.InitialDelay = 0
+	cfg.ScraperControllerSettings.Timeout = 200 * time.Millisecond
+
+	sink := new(consumertest.MetricsSink)
+	rcv, err := NewFactory().CreateMetrics(context.Background(), receivertest.NewNopSettings(metadata.Type), cfg, sink)
+	require.NoError(t, err)
+	require.NoError(t, rcv.Start(context.Background(), componenttest.NewNopHost()))
+	t.Cleanup(func() { require.NoError(t, rcv.Shutdown(context.Background())) })
+
+	// A failed scrape still delivers an empty batch, so two batches mean two
+	// completed attempts.
+	waitForScrapes(t, sink, 2)
+	assert.Zero(t, box.Stats().DescriptionFetches, "request reached the device over an unverified TLS connection")
+	for _, m := range sink.AllMetrics() {
+		assert.Zero(t, m.DataPointCount())
+	}
 }

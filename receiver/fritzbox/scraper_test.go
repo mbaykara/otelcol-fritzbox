@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/receivertest"
@@ -447,6 +448,53 @@ func TestConfigValidate(t *testing.T) {
 	bad.ScraperControllerSettings.Timeout = bad.ScraperControllerSettings.CollectionInterval + 1
 	if err := bad.Validate(); err == nil {
 		t.Error("timeout > collection_interval must fail")
+	}
+}
+
+func TestConfigValidateSchemesAndTLS(t *testing.T) {
+	tests := []struct {
+		name    string
+		mutate  func(*Config)
+		wantErr string
+	}{
+		{name: "http default", mutate: func(*Config) {}},
+		{name: "https with ca_file", mutate: func(c *Config) {
+			c.Endpoint = "https://fritz.box:49443"
+			c.TLS.CAFile = "/etc/fritzbox/ca.pem"
+		}},
+		{name: "unsupported scheme", mutate: func(c *Config) { c.Endpoint = "ftp://fritz.box" }, wantErr: "must use http or https"},
+		{name: "tls on http", mutate: func(c *Config) { c.TLS.CAFile = "/etc/fritzbox/ca.pem" }, wantErr: "require an https endpoint"},
+		{name: "skip verify on http", mutate: func(c *Config) { c.TLS.InsecureSkipVerify = true }, wantErr: "require an https endpoint"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := defaultConfig()
+			tt.mutate(cfg)
+			err := cfg.Validate()
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("error = %v, want containing %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestConfigPasswordRedacted(t *testing.T) {
+	cfg := defaultConfig()
+	cfg.Username = "user"
+	cfg.Password = "s3cret-value"
+
+	conf := confmap.New()
+	if err := conf.Marshal(cfg); err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if got := conf.Get("password"); got != "[REDACTED]" {
+		t.Errorf("marshaled password = %v, want [REDACTED]", got)
 	}
 }
 
