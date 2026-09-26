@@ -9,7 +9,7 @@ package fakebox
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // MD5 is mandated by TR-064 digest authentication.
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/xml"

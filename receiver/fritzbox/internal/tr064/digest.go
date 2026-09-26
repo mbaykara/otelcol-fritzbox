@@ -1,7 +1,7 @@
 package tr064
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // MD5 is mandated by TR-064 digest authentication.
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"

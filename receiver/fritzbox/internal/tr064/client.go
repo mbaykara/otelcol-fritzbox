@@ -241,7 +241,7 @@ func (c *Client) CallWithArgs(ctx context.Context, serviceType, controlURL, acti
 	// with the Authorization header.
 	if resp.StatusCode == http.StatusUnauthorized && c.username != "" {
 		challenge := resp.Header.Get("WWW-Authenticate")
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err := c.auth.updateChallenge(challenge); err != nil {
 			return nil, fmt.Errorf("tr064: action %s: digest authentication failed: %w", action, err)
 		}

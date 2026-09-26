@@ -126,8 +126,8 @@ func TestCallSOAPFault(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	trErr, ok := err.(*Error)
-	if !ok {
+	var trErr *Error
+	if !errors.As(err, &trErr) {
 		t.Fatalf("expected *Error, got %T: %v", err, err)
 	}
 	if trErr.Code != 401 || trErr.Description != "Invalid Action" {
