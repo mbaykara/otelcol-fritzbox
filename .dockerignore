@@ -1,0 +1,9 @@
+*
+!go.mod
+!go.sum
+!cmd/
+!internal/
+!receiver/
+!example/collector-config-production.yaml
+**/*_test.go
+**/testdata/
