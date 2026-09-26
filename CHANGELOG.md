@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Receiver start no longer waits for service discovery. An unreachable device
+  delayed collector startup by up to `timeout`; discovery now runs on the
+  first scrape and retries on every scrape.
 - A failing metric group no longer drops the whole scrape. Real failures are
   reported as partial scrape errors, so the collector still exports metrics
   from unaffected groups. Before, any group error (for example running
@@ -21,6 +24,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Container image `ghcr.io/mbaykara/otelcol-fritzbox` for `linux/amd64`,
+  `linux/arm64`, and `linux/arm/v7`: distroless, non-root, production config
+  bundled, SBOM and provenance attestations, cosign keyless signature.
+- `linux_armv7` release binaries.
 - `tls` receiver settings for `https://` endpoints (port 49443), including
   `ca_file` for the certificate exported from the device. TLS settings on an
   `http://` endpoint are rejected, as are schemes other than http and https.

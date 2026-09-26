@@ -62,6 +62,21 @@ vuln: ## Scan for known vulnerabilities in called code.
 build: ## Build the collector binary into bin/.
 	CGO_ENABLED=0 $(GO) build -trimpath -o bin/otelcol-fritzbox ./cmd/otelcol-fritzbox
 
+IMAGE ?= otelcol-fritzbox:dev
+PLATFORMS ?= linux/amd64,linux/arm64,linux/arm/v7
+
+.PHONY: image
+image: ## Build the container image for the host platform.
+	docker buildx build --build-arg VERSION=$(shell git describe --tags --always --dirty) -t $(IMAGE) --load .
+
+.PHONY: image-smoke
+image-smoke: image ## Build the image and smoke-test it.
+	./scripts/image-smoke.sh $(IMAGE)
+
+.PHONY: image-multiarch
+image-multiarch: ## Build the image for all release platforms without loading it.
+	docker buildx build --platform $(PLATFORMS) .
+
 .PHONY: clean
 clean: ## Remove build output.
 	rm -rf bin dist
