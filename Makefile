@@ -23,7 +23,7 @@ help: ## Show available targets.
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: check
-check: generate-check lint test-race vuln build ## Run all Go checks CI runs.
+check: generate-check builder-check lint test-race vuln build ## Run all Go checks CI runs.
 
 .PHONY: generate
 generate: ## Regenerate code from metadata.yaml.
@@ -33,6 +33,10 @@ generate: ## Regenerate code from metadata.yaml.
 generate-check: generate ## Fail if generated code is stale.
 	@git diff --exit-code -- $(GENERATED) || \
 		(echo "Generated files are stale. Run 'make generate' and commit the result."; exit 1)
+
+.PHONY: builder-check
+builder-check: ## Fail if example/builder-config.yaml drifts from go.mod.
+	./scripts/check-builder-config.sh
 
 .PHONY: fmt
 fmt: ## Format Go code.
