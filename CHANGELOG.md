@@ -21,6 +21,15 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `tls` receiver settings for `https://` endpoints (port 49443), including
+  `ca_file` for the certificate exported from the device. TLS settings on an
+  `http://` endpoint are rejected, as are schemes other than http and https.
+- Distribution includes the `health_check` extension and the
+  `memory_limiter` processor.
+- `example/collector-config-production.yaml`: memory limiter, batch, health
+  check, and OTLP/HTTP with basic auth, configured through environment
+  variables. Replaces `collector-config-e2e.yaml`, which hardcoded a Grafana
+  Cloud endpoint and instance ID.
 - `make check` runs the full CI suite locally (lint, race tests,
   govulncheck, generated-code and builder-config drift, build).
 - In-memory fake Fritz!Box (`internal/fakebox`) with receiver integration
@@ -30,6 +39,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `password` is a `configopaque.String` and is redacted when the collector
+  prints its configuration.
 - CI actions are pinned to commit SHAs and run with read-only permissions.
 
 ## [0.1.0] - 2026-09-07

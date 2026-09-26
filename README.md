@@ -20,7 +20,7 @@ is exposed under `fritzbox.*`.
 
 ```sh
 # pick your platform: darwin_arm64, darwin_amd64, linux_amd64, linux_arm64
-VERSION=0.1.1
+VERSION=0.1.0
 PLATFORM=darwin_arm64
 curl -sLO "https://github.com/mbaykara/otelcol-fritzbox/releases/download/v${VERSION}/otelcol-fritzbox_${VERSION}_${PLATFORM}.tar.gz"
 curl -sLO "https://github.com/mbaykara/otelcol-fritzbox/releases/download/v${VERSION}/otelcol-fritzbox_${VERSION}_checksums.txt"
@@ -58,6 +58,40 @@ Metrics ... "metrics": 14, "data points": 39
 
 If you see this, the pipeline works end to end. For anything else, see
 [Troubleshooting](#troubleshooting).
+
+## Configuration
+
+| Key | Default | Description |
+|---|---|---|
+| `endpoint` | `http://fritz.box:49000` | TR-064 base URL. `http://<box>:49000` or `https://<box>:49443` |
+| `username` / `password` | empty | Digest credentials. Both or neither. The password is redacted when the config is printed |
+| `tls` | system roots | Certificate settings for an `https` endpoint (`ca_file`, `ca_pem`, `server_name_override`, `insecure_skip_verify`, ...). Rejected on `http` |
+| `collection_interval` | `30s` | Scrape interval |
+| `timeout` | `10s` | Per-scrape deadline, must not exceed `collection_interval` |
+| `initial_delay` | `1s` | Delay before the first scrape |
+| `metrics.<name>.enabled` | see [metrics](#collected-metrics) | Toggle individual metrics |
+
+**TLS.** The box serves TR-064 over TLS on port 49443 with a self-signed
+certificate. Export it from the box UI (*Internet → Permit Access → FRITZ!Box
+Services*, certificate download) and point `ca_file` at it. If the certificate
+names `fritz.box` but you connect by IP, set `server_name_override: fritz.box`.
+`insecure_skip_verify: true` disables verification and sends digest responses
+to whoever answers; avoid it outside of a lab.
+
+```yaml
+receivers:
+  fritzbox:
+    endpoint: https://192.168.178.1:49443
+    username: ${env:FRITZBOX_USERNAME}
+    password: ${env:FRITZBOX_PASSWORD}
+    tls:
+      ca_file: /etc/otelcol-fritzbox/fritzbox-ca.pem
+      server_name_override: fritz.box
+```
+
+`example/collector-config-production.yaml` is a complete long-running setup:
+`memory_limiter`, `batch`, `health_check` on `:13133`, and an OTLP/HTTP
+exporter with basic auth, all driven by environment variables.
 
 ## Collected metrics
 
@@ -152,10 +186,13 @@ service:
 ## Authentication
 
 Fritz!Box uses HTTP digest auth **per service**. Some actions (host counts)
-work unauthenticated; device/DSL/WiFi metrics require credentials. Without
-credentials, protected groups are skipped with a one-time warning.
+work unauthenticated; device/DSL/WiFi metrics require credentials.
 
-- `401` in logs on first scrape of a group → username/password missing or wrong.
+- No credentials configured: protected groups are skipped with a one-time
+  `requires credentials` warning. Everything else is exported.
+- Credentials configured but rejected: every scrape logs
+  `device rejected credentials` as an error. Unaffected groups are still
+  exported.
 - Digest nonces rotate; the client handles nonce-count progression automatically.
 
 ## Troubleshooting
@@ -175,9 +212,15 @@ implement its actions. The group is skipped; everything else keeps working.
 
 **Router down vs exporter down** — if the router is unreachable, the
 collector logs `Error scraping metrics ... fetching device description` once
-per interval and emits nothing. The collector process itself stays up and
-reports its own health via its self-telemetry on `:8888`. If the collector
-process is down, no logs and no self-telemetry.
+per interval and emits nothing. The collector process itself stays up, the
+`health_check` extension keeps answering on `:13133`, and self-telemetry is
+served on `:8888`. The receiver retries discovery on every scrape and resumes
+when the router is back. If the collector process is down, no logs and no
+self-telemetry.
+
+**One group fails, others keep reporting** — a failing group is reported as a
+partial scrape error (`Error scraping metrics` with the group named) and the
+remaining metrics of that interval are still exported.
 
 ## Tested devices
 
@@ -191,13 +234,16 @@ Fritz!Repeater devices (subset: device, wlan, hosts). Reports welcome.
 
 ## Development
 
-Requires Go 1.27.
+Requires the Go version in `go.mod`.
 
 ```sh
-go generate ./receiver/...   # regenerate mdatagen code from metadata.yaml
-go test ./...
-go vet ./...
+make check      # everything CI runs: lint, race tests, govulncheck, drift checks, build
+make generate   # regenerate mdatagen code from metadata.yaml
+make help       # all targets
 ```
+
+Tests run against `internal/fakebox`, an in-memory TR-064 device, so no
+router is needed. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 `example/` contains an OCB manifest and collector configs:
 
