@@ -48,6 +48,7 @@ host-list fetch. The receiver must remain usable independently of the binary.
 | `.github/ISSUE_TEMPLATE/`, `.github/*labeler.yml` | Issue forms and automatic labeling rules |
 | `Makefile`, `scripts/` | Developer and CI entry points |
 | `Dockerfile`, `.dockerignore` | Container image; bundles the production example config |
+| `charts/otelcol-fritzbox/`, `ct.yaml` | Helm chart; generates the collector config from values |
 
 Use the Go version and dependency versions declared in `go.mod`. Do not infer
 the supported toolchain from potentially stale prose. The module path is
@@ -177,7 +178,10 @@ direct `scrape` call.
 For metric schema changes, regenerate and inspect the diff. Repeat generation
 and confirm it introduces no further changes. Follow the freshness check in
 `.github/workflows/ci.yml`. Format changed Go files and run `git diff --check`.
-For Dockerfile or bundled-config changes, also run `make image-smoke`.
+For Dockerfile or bundled-config changes, also run `make image-smoke`. For
+chart changes, run `make chart-lint`, and `make chart-test` when templates
+change what is deployed. Keep the chart at one replica: a second pod
+duplicates every scrape and export.
 For documentation-only changes, check accuracy, references, and the diff;
 compiling the entire collector is not required.
 

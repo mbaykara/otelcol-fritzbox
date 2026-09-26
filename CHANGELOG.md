@@ -24,6 +24,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Helm chart `oci://ghcr.io/mbaykara/charts/otelcol-fritzbox`: single replica
+  with Recreate strategy, credentials from existing or chart-managed Secrets,
+  optional device CA for https, OTLP/HTTP with basic auth, config deep-merge,
+  health probes, self-telemetry Service and optional ServiceMonitor, values
+  schema, `restricted` Pod Security compatible. Signed with cosign.
 - Container image `ghcr.io/mbaykara/otelcol-fritzbox` for `linux/amd64`,
   `linux/arm64`, and `linux/arm/v7`: distroless, non-root, production config
   bundled, SBOM and provenance attestations, cosign keyless signature.

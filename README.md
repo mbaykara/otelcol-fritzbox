@@ -92,6 +92,24 @@ cosign verify ghcr.io/mbaykara/otelcol-fritzbox:<version> \
 Build locally with `make image`, or `make image-smoke` to also run the smoke
 test in `scripts/image-smoke.sh`.
 
+## Kubernetes
+
+A Helm chart is published to `oci://ghcr.io/mbaykara/charts/otelcol-fritzbox`
+with every release after 0.1.0. It runs a single replica per router, reads
+credentials from existing Secrets, and passes the `restricted` Pod Security
+Standard:
+
+```sh
+helm install fritzbox oci://ghcr.io/mbaykara/charts/otelcol-fritzbox --version <version> \
+  --set fritzbox.endpoint=http://192.168.178.1:49000 \
+  --set fritzbox.existingSecret=fritzbox \
+  --set otlp.endpoint=https://otlp-gateway-prod-eu-west-2.grafana.net/otlp \
+  --set otlp.existingSecret=grafana-cloud
+```
+
+See [charts/otelcol-fritzbox/README.md](charts/otelcol-fritzbox/README.md) for
+secrets, TLS, values, and signature verification.
+
 ## Configuration
 
 | Key | Default | Description |
