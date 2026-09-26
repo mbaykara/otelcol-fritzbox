@@ -1,0 +1,8 @@
+# chart-testing configuration, used by `make chart-test` and CI.
+chart-dirs:
+  - charts
+target-branch: main
+validate-maintainers: false
+# The release workflow sets the chart version from the git tag.
+check-version-increment: false
+helm-extra-args: --timeout 180s

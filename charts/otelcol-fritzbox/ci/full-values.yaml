@@ -1,0 +1,22 @@
+# Inline credentials, OTLP with basic auth, opt-in metric, config override.
+fritzbox:
+  endpoint: http://192.0.2.1:49000
+  username: ci-user
+  password: ci-password
+  metrics:
+    fritzbox.hosts.info:
+      enabled: true
+otlp:
+  endpoint: http://otlp.invalid:4318
+  username: "123456"
+  password: ci-token
+config:
+  exporters:
+    debug:
+      verbosity: basic
+  service:
+    pipelines:
+      metrics:
+        exporters: [otlp_http, debug]
+podAnnotations:
+  example.com/ci: "true"
