@@ -1,61 +1,27 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["image", "fritzbox", "otlp"],
   "properties": {
     "image": {
       "type": "object",
-      "required": ["repository"],
       "properties": {
-        "repository": {"type": "string", "minLength": 1},
-        "tag": {"type": "string"},
         "digest": {"type": "string", "pattern": "^(|sha256:[a-f0-9]{64})$"},
         "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
       }
     },
     "fritzbox": {
       "type": "object",
-      "required": ["endpoint"],
       "properties": {
         "endpoint": {"type": "string", "pattern": "^https?://[^/]+"},
         "collectionInterval": {"type": "string", "pattern": "^[0-9]+(ms|s|m|h)$"},
-        "timeout": {"type": "string", "pattern": "^[0-9]+(ms|s|m|h)$"},
-        "existingSecret": {"type": "string"},
-        "existingSecretKeys": {
-          "type": "object",
-          "properties": {
-            "username": {"type": "string", "minLength": 1},
-            "password": {"type": "string", "minLength": 1}
-          }
-        },
-        "username": {"type": "string"},
-        "password": {"type": "string"},
-        "tls": {
-          "type": "object",
-          "properties": {
-            "caSecret": {"type": "string"},
-            "caConfigMap": {"type": "string"},
-            "caKey": {"type": "string", "minLength": 1},
-            "serverNameOverride": {"type": "string"}
-          }
-        },
-        "metrics": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object",
-            "properties": {"enabled": {"type": "boolean"}}
-          }
-        }
+        "timeout": {"type": "string", "pattern": "^[0-9]+(ms|s|m|h)$"}
       }
     },
     "otlp": {
       "type": "object",
       "properties": {
         "endpoint": {"type": "string", "pattern": "^(|https?://.+)$"},
-        "auth": {"enum": ["basic", "none"]},
-        "existingSecret": {"type": "string"},
-        "username": {"type": "string"},
-        "password": {"type": "string"}
+        "auth": {"enum": ["basic", "none"]}
       }
     },
     "memoryLimiter": {
@@ -63,21 +29,6 @@
       "properties": {
         "limitPercentage": {"type": "integer", "minimum": 1, "maximum": 100},
         "spikeLimitPercentage": {"type": "integer", "minimum": 0, "maximum": 100}
-      }
-    },
-    "config": {"type": "object"},
-    "resources": {"type": "object"},
-    "service": {
-      "type": "object",
-      "properties": {
-        "type": {"enum": ["ClusterIP", "NodePort", "LoadBalancer"]}
-      }
-    },
-    "serviceMonitor": {
-      "type": "object",
-      "properties": {
-        "enabled": {"type": "boolean"},
-        "interval": {"type": "string"}
       }
     }
   }
