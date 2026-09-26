@@ -1,0 +1,54 @@
+name: Device report
+description: Report how the receiver works on your Fritz!Box model.
+labels: [device-support, needs-triage]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Device model
+      placeholder: FRITZ!Box 6690 Cable
+    validations:
+      required: true
+  - type: input
+    id: fritzos
+    attributes:
+      label: FRITZ!OS version
+      placeholder: "8.25"
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection type
+      options:
+        - DSL
+        - Cable
+        - Fiber
+        - LTE or 5G
+        - Other or unknown
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Receiver version
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: checkboxes
+    id: groups
+    attributes:
+      label: Metric groups that reported data
+      options:
+        - label: Device (uptime)
+        - label: WAN link and traffic counters
+        - label: WAN connection status
+        - label: DSL line
+        - label: WLAN radios
+        - label: Host counts
+        - label: Host list (fritzbox.hosts.info)
+  - type: textarea
+    id: anomalies
+    attributes:
+      label: Anomalies
+      description: Missing groups, warning log lines, or values that look wrong. Remove personal network data.
