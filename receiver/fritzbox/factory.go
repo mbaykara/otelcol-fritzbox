@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -66,13 +67,26 @@ type tr064Client interface {
 	FetchURL(ctx context.Context, path string) ([]byte, error)
 }
 
-// newTR064Client builds the real TR-064 client from config.
-func newTR064Client(cfg *Config) (tr064Client, error) {
-	httpClient := &http.Client{Timeout: cfg.ScraperControllerSettings.Timeout}
+// newTR064Client builds the real TR-064 client from config. TLS settings
+// apply only to https endpoints; Validate rejects them for http.
+func newTR064Client(ctx context.Context, cfg *Config) (tr064Client, error) {
+	transport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return nil, errors.New("fritzbox: unexpected default HTTP transport type")
+	}
+	transport = transport.Clone()
+	if strings.HasPrefix(cfg.Endpoint, "https://") {
+		tlsCfg, err := cfg.TLS.LoadTLSConfig(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("fritzbox: %w", err)
+		}
+		transport.TLSClientConfig = tlsCfg
+	}
+	httpClient := &http.Client{Timeout: cfg.ScraperControllerSettings.Timeout, Transport: transport}
 	if httpClient.Timeout <= 0 {
 		httpClient.Timeout = 10 * time.Second
 	}
-	client, err := tr064.NewClient(cfg.Endpoint, cfg.Username, cfg.Password, httpClient)
+	client, err := tr064.NewClient(cfg.Endpoint, cfg.Username, string(cfg.Password), httpClient)
 	if err != nil {
 		return nil, fmt.Errorf("fritzbox: %w", err)
 	}
