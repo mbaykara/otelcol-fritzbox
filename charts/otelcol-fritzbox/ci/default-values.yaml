@@ -1,0 +1,3 @@
+# Unreachable device, debug exporter: the pod must still become ready.
+fritzbox:
+  endpoint: http://192.0.2.1:49000

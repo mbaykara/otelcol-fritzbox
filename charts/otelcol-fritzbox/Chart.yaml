@@ -1,0 +1,19 @@
+apiVersion: v2
+name: otelcol-fritzbox
+description: OpenTelemetry Collector that scrapes AVM Fritz!Box routers over TR-064
+type: application
+# The release workflow sets version and appVersion from the git tag.
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.25.0-0"
+home: https://github.com/mbaykara/otelcol-fritzbox
+sources:
+  - https://github.com/mbaykara/otelcol-fritzbox
+keywords:
+  - opentelemetry
+  - collector
+  - fritzbox
+  - tr-064
+maintainers:
+  - name: mbaykara
+    url: https://github.com/mbaykara

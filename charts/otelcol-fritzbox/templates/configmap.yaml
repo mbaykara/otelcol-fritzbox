@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "otelcol-fritzbox.fullname" . }}
+  labels:
+    {{- include "otelcol-fritzbox.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    {{- include "otelcol-fritzbox.config" . | nindent 4 }}

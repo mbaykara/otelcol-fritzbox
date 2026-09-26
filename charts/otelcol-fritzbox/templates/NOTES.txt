@@ -1,0 +1,15 @@
+otelcol-fritzbox scrapes {{ .Values.fritzbox.endpoint }} every {{ .Values.fritzbox.collectionInterval }}.
+{{- if not (include "otelcol-fritzbox.fritzboxCredentials" .) }}
+
+No Fritz!Box credentials configured: only unauthenticated metric groups
+(host counts) are collected. Set fritzbox.existingSecret to collect the rest.
+{{- end }}
+{{- if not .Values.otlp.endpoint }}
+
+otlp.endpoint is empty: metrics go to the debug exporter in the pod log.
+Set otlp.endpoint to ship them to a backend.
+{{- end }}
+
+Check the collector:
+  kubectl --namespace {{ .Release.Namespace }} logs deploy/{{ include "otelcol-fritzbox.fullname" . }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "otelcol-fritzbox.fullname" . }} 13133

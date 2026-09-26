@@ -37,6 +37,28 @@ git diff   # inspect the generated changes
 
 CI fails if the generated code is stale.
 
+## Container image
+
+`make image-smoke` builds the image for the host platform and runs
+`scripts/image-smoke.sh` (version, bundled config validation, non-root user,
+health check). `make image-multiarch` builds every release platform. CI runs
+both on pull requests.
+
+## Helm chart
+
+`make chart-lint` runs `helm lint`, `ct lint`, and
+`scripts/chart-render-test.sh`, which renders the chart for several value
+combinations, validates each rendered collector config with the built
+binary, checks manifests with kubeconform when installed, and asserts that
+invalid values are rejected. `make chart-test` installs the chart into a kind
+cluster (with its own kubeconfig under `bin/`) and runs `helm test`;
+`make chart-test-clean` deletes the cluster. Needs helm, ct, kind, yq, and
+Docker.
+
+Add a file to `charts/otelcol-fritzbox/ci/` for every value combination that
+should be installed in CI. Keep the chart version at the placeholder; the
+release workflow sets it from the tag.
+
 ## Collector dependencies
 
 `go.mod` and `example/builder-config.yaml` must pin the same Collector

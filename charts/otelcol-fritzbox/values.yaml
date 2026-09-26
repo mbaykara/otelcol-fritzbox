@@ -1,0 +1,122 @@
+# One collector per router: the chart always runs a single replica with the
+# Recreate strategy, so two pods never scrape and export the same device.
+
+image:
+  repository: ghcr.io/mbaykara/otelcol-fritzbox
+  # Defaults to the chart appVersion.
+  tag: ""
+  # Pins the image by digest; takes precedence over tag.
+  digest: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+fritzbox:
+  # http://<box>:49000, or https://<box>:49443 together with tls below.
+  endpoint: http://fritz.box:49000
+  collectionInterval: 30s
+  timeout: 10s
+  # Credentials are optional. Without them only unauthenticated groups
+  # (host counts) are collected. Prefer existingSecret over inline values.
+  existingSecret: ""
+  existingSecretKeys:
+    username: username
+    password: password
+  # Used only when existingSecret is empty; the chart creates a Secret.
+  username: ""
+  password: ""
+  tls:
+    # Secret or ConfigMap holding the certificate exported from the device.
+    caSecret: ""
+    caConfigMap: ""
+    caKey: ca.crt
+    serverNameOverride: ""
+  # Metric toggles, e.g. {"fritzbox.hosts.info": {"enabled": true}}. The
+  # per-device and external-IP metrics are opt-in for privacy reasons.
+  metrics: {}
+
+otlp:
+  # OTLP/HTTP endpoint, e.g. https://otlp-gateway-prod-eu-west-2.grafana.net/otlp.
+  # When empty, metrics go to the debug exporter.
+  endpoint: ""
+  # basic or none.
+  auth: basic
+  existingSecret: ""
+  existingSecretKeys:
+    username: username
+    password: password
+  # Used only when existingSecret is empty; the chart creates a Secret.
+  username: ""
+  password: ""
+
+memoryLimiter:
+  # Percentages of the container memory limit.
+  limitPercentage: 80
+  spikeLimitPercentage: 25
+
+# Collector configuration deep-merged over the generated one. Lists replace
+# lists, so overriding service.pipelines.metrics.exporters replaces the
+# whole exporter list.
+config: {}
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+service:
+  type: ClusterIP
+  annotations: {}
+
+serviceMonitor:
+  # Scrapes the collector's own metrics on :8888. Needs the Prometheus
+  # Operator CRDs.
+  enabled: false
+  interval: 30s
+  labels: {}
+
+livenessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+readinessProbe:
+  initialDelaySeconds: 2
+  periodSeconds: 10
+  failureThreshold: 3
+
+priorityClassName: ""
+nodeSelector: {}
+tolerations: []
+affinity: {}
+terminationGracePeriodSeconds: 30
+
+extraEnv: []
+extraEnvFrom: []
+extraVolumes: []
+extraVolumeMounts: []

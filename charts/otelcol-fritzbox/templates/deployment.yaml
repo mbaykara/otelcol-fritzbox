@@ -1,0 +1,149 @@
+{{- $fullname := include "otelcol-fritzbox.fullname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- include "otelcol-fritzbox.labels" . | nindent 4 }}
+spec:
+  # Fixed at one: a second replica would scrape and export the same device twice.
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "otelcol-fritzbox.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "otelcol-fritzbox.config" . | sha256sum }}
+        {{- if include "otelcol-fritzbox.createSecret" . }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "otelcol-fritzbox.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "otelcol-fritzbox.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: otelcol-fritzbox
+          image: {{ include "otelcol-fritzbox.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --config=/etc/otelcol-fritzbox/config/config.yaml
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            {{- if include "otelcol-fritzbox.fritzboxCredentials" . }}
+            {{- $secret := .Values.fritzbox.existingSecret | default $fullname }}
+            - name: FRITZBOX_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: {{ ternary .Values.fritzbox.existingSecretKeys.username "fritzbox-username" (not (empty .Values.fritzbox.existingSecret)) }}
+            - name: FRITZBOX_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: {{ ternary .Values.fritzbox.existingSecretKeys.password "fritzbox-password" (not (empty .Values.fritzbox.existingSecret)) }}
+            {{- end }}
+            {{- if include "otelcol-fritzbox.otlpBasicAuth" . }}
+            {{- $secret := .Values.otlp.existingSecret | default $fullname }}
+            - name: OTLP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: {{ ternary .Values.otlp.existingSecretKeys.username "otlp-username" (not (empty .Values.otlp.existingSecret)) }}
+            - name: OTLP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: {{ ternary .Values.otlp.existingSecretKeys.password "otlp-password" (not (empty .Values.otlp.existingSecret)) }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: health
+              containerPort: 13133
+              protocol: TCP
+            - name: metrics
+              containerPort: 8888
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: health
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: health
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol-fritzbox/config
+              readOnly: true
+            {{- if include "otelcol-fritzbox.hasCA" . }}
+            - name: tls
+              mountPath: /etc/otelcol-fritzbox/tls
+              readOnly: true
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $fullname }}
+        {{- if .Values.fritzbox.tls.caSecret }}
+        - name: tls
+          secret:
+            secretName: {{ .Values.fritzbox.tls.caSecret }}
+        {{- else if .Values.fritzbox.tls.caConfigMap }}
+        - name: tls
+          configMap:
+            name: {{ .Values.fritzbox.tls.caConfigMap }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
