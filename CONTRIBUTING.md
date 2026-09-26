@@ -37,6 +37,13 @@ git diff   # inspect the generated changes
 
 CI fails if the generated code is stale.
 
+## Container image
+
+`make image-smoke` builds the image for the host platform and runs
+`scripts/image-smoke.sh` (version, bundled config validation, non-root user,
+health check). `make image-multiarch` builds every release platform. CI runs
+both on pull requests.
+
 ## Collector dependencies
 
 `go.mod` and `example/builder-config.yaml` must pin the same Collector

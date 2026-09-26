@@ -19,7 +19,7 @@ is exposed under `fritzbox.*`.
 **1. Download and verify the collector** (or [build from source](#development)):
 
 ```sh
-# pick your platform: darwin_arm64, darwin_amd64, linux_amd64, linux_arm64
+# pick your platform: darwin_arm64, darwin_amd64, linux_amd64, linux_arm64, linux_armv7 (from the next release)
 VERSION=0.1.0
 PLATFORM=darwin_arm64
 curl -sLO "https://github.com/mbaykara/otelcol-fritzbox/releases/download/v${VERSION}/otelcol-fritzbox_${VERSION}_${PLATFORM}.tar.gz"
@@ -51,13 +51,46 @@ per-device identity, no external IP. See [Privacy](#privacy).
 **Expected first output** (within ~30 s, debug exporter):
 
 ```text
-info    fritzbox/scraper.go:101    fritzbox: discovered TR-064 services ... count": 37
+info    fritzbox: discovered TR-064 services ... count": 37
 ...
 Metrics ... "metrics": 14, "data points": 39
 ```
 
 If you see this, the pipeline works end to end. For anything else, see
 [Troubleshooting](#troubleshooting).
+
+## Container image
+
+Multi-arch images (`linux/amd64`, `linux/arm64`, `linux/arm/v7`) are
+published to `ghcr.io/mbaykara/otelcol-fritzbox` for every release after
+0.1.0. They are distroless, run as UID 65532, and bundle
+`example/collector-config-production.yaml` as the default configuration, so
+a deployment only needs environment variables:
+
+```sh
+docker run -d --name otelcol-fritzbox --restart unless-stopped \
+  -e FRITZBOX_ENDPOINT=http://192.168.178.1:49000 \
+  -e FRITZBOX_USERNAME -e FRITZBOX_PASSWORD \
+  -e OTLP_ENDPOINT=https://otlp-gateway-prod-eu-west-2.grafana.net/otlp \
+  -e OTLP_USERNAME -e OTLP_PASSWORD \
+  -p 13133:13133 \
+  ghcr.io/mbaykara/otelcol-fritzbox:<version>
+```
+
+Mount your own file over `/etc/otelcol-fritzbox/config.yaml` to replace the
+configuration. `:13133` is the `health_check` endpoint.
+
+Images carry an SBOM and SLSA provenance attestation and are signed with
+cosign keyless signing:
+
+```sh
+cosign verify ghcr.io/mbaykara/otelcol-fritzbox:<version> \
+  --certificate-identity-regexp '^https://github.com/mbaykara/otelcol-fritzbox/.github/workflows/release.yml@refs/tags/v' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Build locally with `make image`, or `make image-smoke` to also run the smoke
+test in `scripts/image-smoke.sh`.
 
 ## Configuration
 
