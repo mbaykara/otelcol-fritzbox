@@ -13,6 +13,6 @@ days.
   you configure. It never sends router credentials anywhere except the
   configured endpoint.
 - Opt-in metrics can export device identities (hostname, IP, MAC) and your
-  public IP. See the Privacy section in the README before enabling them.
+  public IP. See [Privacy](docs/configuration.md#privacy) before enabling them.
 - TR-064 digest authentication uses MD5 because the router protocol requires
   it; this is not used for password storage.
