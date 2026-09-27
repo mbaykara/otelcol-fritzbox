@@ -14,9 +14,31 @@ Metrics follow the
 where applicable; Fritz!Box-specific data (DSL physics, WLAN radios, hosts)
 is exposed under `fritzbox.*`.
 
+## Deploy
+
+1. Create a user on the box under *System → FRITZ!Box Users* with the
+   "FRITZ!Box settings" permission.
+2. Run the collector. The binary and the image take their settings from
+   environment variables (`FRITZBOX_ENDPOINT`, `FRITZBOX_USERNAME`,
+   `FRITZBOX_PASSWORD`, `OTLP_ENDPOINT`, `OTLP_USERNAME`, `OTLP_PASSWORD`, see
+   [`example/collector-config-production.yaml`](example/collector-config-production.yaml));
+   the Helm chart takes the same settings as values.
+
+   | Where | How |
+   |---|---|
+   | Any host | release binary, [Quickstart](#quickstart-validated) |
+   | Docker | `ghcr.io/mbaykara/otelcol-fritzbox`, [Container image](#container-image) |
+   | Kubernetes | Helm chart, [chart README](charts/otelcol-fritzbox/README.md#install) |
+   | Kubernetes with Flux | HelmRelease, [chart README](charts/otelcol-fritzbox/README.md#flux) |
+
+3. Import a dashboard, see [Grafana dashboards](#grafana-dashboards).
+
+Receiver options (TLS, intervals, opt-in metrics) are in
+[Configuration](#configuration).
+
 ## Quickstart (validated)
 
-**1. Download and verify the collector** (or [build from source](#development)):
+**1. Download and verify the collector** (or build from source, see [CONTRIBUTING.md](CONTRIBUTING.md)):
 
 ```sh
 # pick your platform: darwin_arm64, darwin_amd64, linux_amd64, linux_arm64, linux_armv7

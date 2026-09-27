@@ -33,6 +33,46 @@ in the pod log. Without Fritz!Box credentials only unauthenticated groups
 The chart is signed; see
 [signature verification](https://github.com/mbaykara/otelcol-fritzbox#container-image).
 
+## Flux
+
+Keep the credentials in Secrets (for example SOPS-encrypted) and reference
+them from the HelmRelease:
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: mbaykara-charts
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/mbaykara/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: otelcol-fritzbox
+  namespace: monitoring
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: otelcol-fritzbox
+      version: "0.2.x"
+      sourceRef:
+        kind: HelmRepository
+        name: mbaykara-charts
+        namespace: flux-system
+  values:
+    fritzbox:
+      endpoint: http://192.168.178.1:49000
+      existingSecret: fritzbox-credentials
+    otlp:
+      endpoint: https://otlp-gateway-prod-eu-west-2.grafana.net/otlp
+      existingSecret: grafana-cloud-credentials
+```
+
 ## Values
 
 | Key | Default | Description |
