@@ -31,7 +31,7 @@ in the pod log. Without Fritz!Box credentials only unauthenticated groups
 (host counts) are collected.
 
 The chart is signed; see
-[signature verification](https://github.com/mbaykara/otelcol-fritzbox#container-image).
+[signature verification](https://github.com/mbaykara/otelcol-fritzbox/blob/main/docs/installation.md#container-image).
 
 ## Flux
 

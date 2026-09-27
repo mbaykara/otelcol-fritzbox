@@ -14,298 +14,58 @@ Metrics follow the
 where applicable; Fritz!Box-specific data (DSL physics, WLAN radios, hosts)
 is exposed under `fritzbox.*`.
 
-## Deploy
-
-1. Create a user on the box under *System → FRITZ!Box Users* with the
-   "FRITZ!Box settings" permission.
-2. Run the collector. The binary and the image take their settings from
-   environment variables (`FRITZBOX_ENDPOINT`, `FRITZBOX_USERNAME`,
-   `FRITZBOX_PASSWORD`, `OTLP_ENDPOINT`, `OTLP_USERNAME`, `OTLP_PASSWORD`, see
-   [`example/collector-config-production.yaml`](example/collector-config-production.yaml));
-   the Helm chart takes the same settings as values.
-
-   | Where | How |
-   |---|---|
-   | Any host | release binary, [Quickstart](#quickstart-validated) |
-   | Docker | `ghcr.io/mbaykara/otelcol-fritzbox`, [Container image](#container-image) |
-   | Kubernetes | Helm chart, [chart README](charts/otelcol-fritzbox/README.md#install) |
-   | Kubernetes with Flux | HelmRelease, [chart README](charts/otelcol-fritzbox/README.md#flux) |
-
-3. Import a dashboard, see [Grafana dashboards](#grafana-dashboards).
-
-Receiver options (TLS, intervals, opt-in metrics) are in
-[Configuration](#configuration).
-
-## Quickstart (validated)
-
-**1. Download and verify the collector** (or build from source, see [CONTRIBUTING.md](CONTRIBUTING.md)):
-
-```sh
-# pick your platform: darwin_arm64, darwin_amd64, linux_amd64, linux_arm64, linux_armv7
-VERSION=0.2.0
-PLATFORM=darwin_arm64
-curl -sLO "https://github.com/mbaykara/otelcol-fritzbox/releases/download/v${VERSION}/otelcol-fritzbox_${VERSION}_${PLATFORM}.tar.gz"
-curl -sLO "https://github.com/mbaykara/otelcol-fritzbox/releases/download/v${VERSION}/otelcol-fritzbox_${VERSION}_checksums.txt"
-# verify: the checksum printed must match the tarball's line in checksums.txt
-shasum -a 256 "otelcol-fritzbox_${VERSION}_${PLATFORM}.tar.gz"
-grep "${PLATFORM}" otelcol-fritzbox_${VERSION}_checksums.txt
-tar xzf "otelcol-fritzbox_${VERSION}_${PLATFORM}.tar.gz"
-```
-
-**2. Configure.** Create a dedicated user on the box under
-*System → FRITZ!Box Users* with "FRITZ!Box settings" permission, then:
-
-```sh
-export FRITZBOX_USERNAME=myuser FRITZBOX_PASSWORD=mypassword
-cp example/collector-config-minimal.yaml config.yaml
-```
-
-The minimal config collects aggregated, low-cardinality metrics only: no
-per-device identity, no external IP. See [Privacy](#privacy).
-
-**3. Validate and run:**
-
-```sh
-./otelcol-fritzbox validate --config config.yaml   # config check, no scraping
-./otelcol-fritzbox --config config.yaml            # runs and prints metrics
-```
-
-**Expected first output** (within ~30 s, debug exporter):
-
-```text
-info    fritzbox: discovered TR-064 services ... count": 37
-...
-Metrics ... "metrics": 14, "data points": 39
-```
-
-If you see this, the pipeline works end to end. For anything else, see
-[Troubleshooting](#troubleshooting).
-
-## Container image
-
-Multi-arch images (`linux/amd64`, `linux/arm64`, `linux/arm/v7`) are
-published to `ghcr.io/mbaykara/otelcol-fritzbox` for every release after
-0.1.0. They are distroless, run as UID 65532, and bundle
-`example/collector-config-production.yaml` as the default configuration, so
-a deployment only needs environment variables:
-
-```sh
-docker run -d --name otelcol-fritzbox --restart unless-stopped \
-  -e FRITZBOX_ENDPOINT=http://192.168.178.1:49000 \
-  -e FRITZBOX_USERNAME -e FRITZBOX_PASSWORD \
-  -e OTLP_ENDPOINT=https://otlp-gateway-prod-eu-west-2.grafana.net/otlp \
-  -e OTLP_USERNAME -e OTLP_PASSWORD \
-  -p 13133:13133 \
-  ghcr.io/mbaykara/otelcol-fritzbox:<version>
-```
-
-Mount your own file over `/etc/otelcol-fritzbox/config.yaml` to replace the
-configuration. `:13133` is the `health_check` endpoint.
-
-Images and charts carry cosign keyless signatures; images also carry an SBOM
-and SLSA provenance attestation. Verify with (for the chart, use
-`ghcr.io/mbaykara/charts/otelcol-fritzbox:<version>`):
-
-```sh
-cosign verify ghcr.io/mbaykara/otelcol-fritzbox:<version> \
-  --certificate-identity-regexp '^https://github.com/mbaykara/otelcol-fritzbox/.github/workflows/release.yml@refs/tags/v' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com
-```
-
-## Kubernetes
-
-A Helm chart is published to `oci://ghcr.io/mbaykara/charts/otelcol-fritzbox`
-with every release after 0.1.0. Install, secrets, TLS, and values:
-[charts/otelcol-fritzbox/README.md](charts/otelcol-fritzbox/README.md).
-
-## Configuration
-
-| Key | Default | Description |
-|---|---|---|
-| `endpoint` | `http://fritz.box:49000` | TR-064 base URL. `http://<box>:49000` or `https://<box>:49443` |
-| `username` / `password` | empty | Digest credentials. Both or neither. The password is redacted when the config is printed |
-| `tls` | system roots | Certificate settings for an `https` endpoint (`ca_file`, `ca_pem`, `server_name_override`, `insecure_skip_verify`, ...). Rejected on `http` |
-| `collection_interval` | `30s` | Scrape interval |
-| `timeout` | `10s` | Per-scrape deadline, must not exceed `collection_interval` |
-| `initial_delay` | `1s` | Delay before the first scrape |
-| `metrics.<name>.enabled` | see [metrics](#collected-metrics) | Toggle individual metrics |
-
-**TLS.** The box serves TR-064 over TLS on port 49443 with a self-signed
-certificate. Export it from the box UI (*Internet → Permit Access → FRITZ!Box
-Services*, certificate download) and point `ca_file` at it. If the certificate
-names `fritz.box` but you connect by IP, set `server_name_override: fritz.box`.
-`insecure_skip_verify: true` disables verification and sends digest responses
-to whoever answers; avoid it outside of a lab.
-
-```yaml
-receivers:
-  fritzbox:
-    endpoint: https://192.168.178.1:49443
-    username: ${env:FRITZBOX_USERNAME}
-    password: ${env:FRITZBOX_PASSWORD}
-    tls:
-      ca_file: /etc/otelcol-fritzbox/fritzbox-ca.pem
-      server_name_override: fritz.box
-```
-
-`example/collector-config-production.yaml` is a complete long-running setup:
-`memory_limiter`, `batch`, `health_check` on `:13133`, and an OTLP/HTTP
-exporter with basic auth, all driven by environment variables.
-
-## Collected metrics
-
-| Metric | Type | Unit | Description |
-|---|---|---|---|
-| `hw.network.io` | Sum (monotonic) | By | WAN bytes received/transmitted (`network.io.direction`) |
-| `hw.network.packets` | Sum (monotonic) | {packet} | WAN + WLAN packets (`hw.id`, `network.io.direction`) |
-| `hw.network.bandwidth.limit` | Gauge | By/s | WAN link speed |
-| `hw.network.bandwidth.utilization` | Gauge | 1 | WAN bandwidth utilization fraction |
-| `hw.network.up` | Gauge | 1 | Link status (WAN + per WLAN radio) |
-| `hw.errors` | Sum (monotonic) | {error} | DSL line errors (`error.type=fec/crc/hec`, direction) |
-| `fritzbox.device.uptime` | Gauge | s | Device uptime |
-| `fritzbox.wan.connection.status` | Gauge | 1 | 1 = Connected |
-| `fritzbox.wan.connection.uptime` | Gauge | s | WAN connection uptime |
-| `fritzbox.wan.external_ip` | Gauge | 1 | **Opt-in.** External IP in attribute |
-| `fritzbox.dsl.rate.current` / `.rate.max` | Gauge | bit/s | DSL sync/max rate per direction |
-| `fritzbox.dsl.noise_margin` / `.attenuation` | Gauge | dB | DSL SNR/attenuation per direction |
-| `fritzbox.dsl.error_seconds` | Sum (monotonic) | s | Errored/severely-errored seconds |
-| `fritzbox.wlan.channel` | Gauge | 1 | WLAN channel per radio (`hw.id`, `ssid`) |
-| `fritzbox.wlan.clients` | Gauge | {client} | Associated clients per radio |
-| `fritzbox.hosts.total` | Gauge | {host} | Known hosts |
-| `fritzbox.hosts.active` | Gauge | {host} | **Opt-in.** Active hosts (N extra SOAP calls) |
-| `fritzbox.hosts.info` | Gauge | 1 | **Opt-in.** Per-device identity: hostname, ip, mac, interface_type, active, guest, friendly_name |
-
-Resource attributes: `hw.vendor=AVM`, `hw.model`, `hw.serial_number`,
-`fritzbox.device.software_version`, `server.address`.
-
-Cable/fiber boxes without a DSL service simply skip the DSL group; boxes
-without WLAN skip WLAN metrics.
-
-## Privacy
-
-Two metrics are **opt-in** (disabled by default) because they export
-identifying information:
-
-- `fritzbox.hosts.info` — one series per known device carrying its hostname,
-  IP, MAC address, guest status, and friendly name. Sends your household's
-  device inventory to the configured backend and creates one series per
-  device (label churn when DHCP addresses change).
-- `fritzbox.wan.external_ip` — publishes your public IP as a metric attribute.
-
-Enable them explicitly only where you want this data:
-
-```yaml
-receivers:
-  fritzbox:
-    metrics:
-      fritzbox.hosts.info:
-        enabled: true
-```
-
-`example/collector-config.yaml` enables all opt-in metrics for demonstration;
-`example/collector-config-minimal.yaml` enables none.
-
-## Grafana dashboards
-
 ![Fritz!Box home network dashboard](dashboard/fritzbox-modern.png)
 
-`dashboard/fritzbox-modern.json` is the dashboard above: KPI cards, a live
-home network map, speed gauges, WAN traffic, DSL line quality, WLAN and
-device breakdowns. It needs the
-[Business Charts](https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/)
-panel plugin (7.x). The network map, device and table panels use the opt-in
-`fritzbox.hosts.info` and `fritzbox.hosts.active` metrics. Import via
-*Dashboards → New → Import* and pick your Prometheus datasource in the
-dashboard's datasource selector.
+## Install
 
-`dashboard/fritzbox-network.json` is a simpler dashboard with core panels
-only. Import it the same way, or manage it as code with
-[gcx](https://github.com/grafana/gcx):
+Create a user on the box under *System → FRITZ!Box Users* with the
+"FRITZ!Box settings" permission, then run the collector one of these ways.
+
+**Kubernetes (Helm):**
 
 ```sh
-gcx dashboards create --context <your-context> -f dashboard/fritzbox-network-k8s.json
+kubectl create secret generic fritzbox --from-literal=username=<user> --from-literal=password=<password>
+kubectl create secret generic otlp --from-literal=username=<instance-id> --from-literal=password=<token>
+helm install fritzbox oci://ghcr.io/mbaykara/charts/otelcol-fritzbox \
+  --set fritzbox.endpoint=http://192.168.178.1:49000 --set fritzbox.existingSecret=fritzbox \
+  --set otlp.endpoint=https://otlp-gateway-prod-eu-west-2.grafana.net/otlp --set otlp.existingSecret=otlp
 ```
 
-The dashboard queries Prometheus-style names — Grafana Cloud converts OTLP
-metric names on ingestion (dots become underscores, units become suffixes):
-`fritzbox.device.uptime` → `fritzbox_device_uptime_seconds`.
+**Docker:**
 
-## Using the receiver in your own collector
-
-Add it to your [OCB](https://opentelemetry.io/docs/collector/custom-collector/)
-manifest — `gomod` is the Go module, `import` is the receiver package:
-
-```yaml
-receivers:
-  - gomod: github.com/mbaykara/otelcol-fritzbox v0.1.1
-    import: github.com/mbaykara/otelcol-fritzbox/receiver/fritzbox
+```sh
+docker run -d --restart unless-stopped -p 13133:13133 \
+  -e FRITZBOX_ENDPOINT=http://192.168.178.1:49000 -e FRITZBOX_USERNAME -e FRITZBOX_PASSWORD \
+  -e OTLP_ENDPOINT=https://otlp-gateway-prod-eu-west-2.grafana.net/otlp -e OTLP_USERNAME -e OTLP_PASSWORD \
+  ghcr.io/mbaykara/otelcol-fritzbox:0.2.0
 ```
 
-Then wire it into a metrics pipeline:
+**Binary:** download from [Releases](https://github.com/mbaykara/otelcol-fritzbox/releases)
+and run it with a config from [`example/`](example/), see the
+[validated quickstart](docs/installation.md#binary-validated-quickstart).
 
-```yaml
-service:
-  pipelines:
-    metrics:
-      receivers: [fritzbox]
-      processors: [batch]
-      exporters: [otlp]
-```
+## Dashboard
 
-## Authentication
+Import [`dashboard/fritzbox-modern.json`](dashboard/fritzbox-modern.json) via
+*Dashboards → New → Import*. It needs the
+[Business Charts](https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/)
+plugin and the opt-in `fritzbox.hosts.info` and `fritzbox.hosts.active`
+metrics for the device panels. Details: [docs/dashboards.md](docs/dashboards.md).
 
-Fritz!Box uses HTTP digest auth **per service**. Some actions (host counts)
-work unauthenticated; device/DSL/WiFi metrics require credentials.
+## Documentation
 
-- No credentials configured: protected groups are skipped with a one-time
-  `requires credentials` warning. Everything else is exported.
-- Credentials configured but rejected: every scrape logs
-  `device rejected credentials` as an error. Unaffected groups are still
-  exported.
-- Digest nonces rotate; the client handles nonce-count progression automatically.
-
-## Troubleshooting
-
-**`context deadline exceeded` on discovery** — the box is unreachable (wrong
-endpoint, wrong network) or DNS for `fritz.box` resolves to a public parked
-address (some DNS setups hijack it). Use the box's IP directly.
-
-**A metric group is missing entirely** — the device doesn't offer that
-service (e.g. no `WANDSLInterfaceConfig` on cable/fiber boxes) or the action
-faults. The log contains a one-time `warn` per skipped group naming the
-service. This is a device capability difference, not an exporter failure.
-
-**`UPnP error 401: Invalid Action` for WAN connection metrics** — some
-firmware/WAN-mode combinations advertise `WANIPConnection` but don't
-implement its actions. The group is skipped; everything else keeps working.
-
-**Router down vs exporter down** — if the router is unreachable, the
-collector logs `Error scraping metrics ... fetching device description` once
-per interval and emits nothing. The collector process itself stays up, the
-`health_check` extension keeps answering on `:13133`, and self-telemetry is
-served on `:8888`. The receiver retries discovery on every scrape and resumes
-when the router is back. If the collector process is down, no logs and no
-self-telemetry.
-
-**One group fails, others keep reporting** — a failing group is reported as a
-partial scrape error (`Error scraping metrics` with the group named) and the
-remaining metrics of that interval are still exported.
-
-## Tested devices
-
-| Model | FRITZ!OS | Connection | Verified groups | Notes |
-|---|---|---|---|---|
-| FRITZ!Box 7590 (HW 226) | 8.25 | VDSL | device, wan traffic/link, dsl, wlan (3 radios), hosts, host info | WAN connection status/uptime unavailable (service faults); utilization requires extra permission scope |
-
-Expected to work but **not verified**: other 75xx/56xx/66xx models on
-FRITZ!OS 7.5+, cable and fiber variants (DSL group auto-skips), and
-Fritz!Repeater devices (subset: device, wlan, hosts). Reports welcome.
+- [Installation](docs/installation.md): binary, container image, signatures, Kubernetes
+- [Configuration](docs/configuration.md): receiver options, TLS, authentication, privacy
+- [Metrics](docs/metrics.md): metric reference and tested devices
+- [Dashboards](docs/dashboards.md)
+- [Using the receiver in your own collector](docs/custom-collector.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Helm chart](charts/otelcol-fritzbox/README.md)
 
 ## Contributing
 
 Checks, tests, and conventions: [CONTRIBUTING.md](CONTRIBUTING.md). Report
-security issues privately per
-[SECURITY.md](SECURITY.md).
+security issues privately per [SECURITY.md](SECURITY.md).
 
 ## License
 

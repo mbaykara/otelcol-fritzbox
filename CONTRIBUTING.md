@@ -53,8 +53,8 @@ Issue forms add a type label and `needs-triage`; the Label workflow adds
 
 ## Device coverage
 
-Tested a device? Open a device report so it can go into the README support
-matrix.
+Tested a device? Open a device report so it can go into the
+[tested devices](docs/metrics.md#tested-devices) table.
 
 ## Releases
 
