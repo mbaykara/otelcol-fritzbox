@@ -31,8 +31,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -79,8 +78,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -129,8 +127,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -177,8 +174,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -225,8 +221,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -276,8 +271,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -326,8 +320,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -377,8 +370,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -428,8 +420,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -448,8 +439,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -459,7 +449,7 @@
                       },
                       "version": "v0"
                     },
-                    "refId": "A"
+                    "refId": "B"
                   }
                 }
               ],
@@ -499,8 +489,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -548,8 +537,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -597,8 +585,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -648,8 +635,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -697,8 +683,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
@@ -746,8 +731,7 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "type": "prometheus",
-                        "uid": "grafanacloud-prom"
+                        "name": "grafanacloud-prom"
                       },
                       "group": "prometheus",
                       "kind": "DataQuery",
