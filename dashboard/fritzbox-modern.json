@@ -1,0 +1,1043 @@
+{
+  "uid": "fritzbox-modern",
+  "title": "Fritz!Box · Home Network",
+  "tags": [
+    "fritzbox",
+    "network",
+    "otelcol-fritzbox"
+  ],
+  "description": "Fritz!Box router metrics from otelcol-fritzbox, built with Business Charts.",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "timezone": "browser",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "label": "Datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "hide": 0,
+        "refresh": 1
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "otelcol-fritzbox",
+      "type": "link",
+      "url": "https://github.com/mbaykara/otelcol-fritzbox",
+      "targetBlank": true,
+      "icon": "external link"
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "volkovlabs-echarts-panel",
+      "title": "",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(hw_network_up_ratio{hw_id=\"fritzbox.wan\"})",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(hw_network_bandwidth_limit_bytes_per_second{hw_id=\"fritzbox.wan\"}) * 8",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst grad = (c) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + '66' }, { offset: 1, color: c + '00' }]);\nconst card = ({ label, color, value, unit, valueColor, sub, spark, fmt, strip, pulse }) => {\n  const g = [\n    { type: 'circle', left: 16, top: 19, z: 10, shape: { r: 4 }, style: { fill: color } },\n    { type: 'text', left: 28, top: 14, z: 10, style: { text: label.toUpperCase(), fill: ink.m, font: '600 11px Inter, Helvetica, sans-serif' } },\n    { type: 'text', left: 16, top: 36, z: 10, style: { text: `{v|${value}}{u|${unit ? ' ' + unit : ''}}`,\n      rich: { v: { fill: valueColor || ink.p, font: '600 30px Inter, Helvetica, sans-serif' }, u: { fill: ink.s, font: '500 14px Inter, Helvetica, sans-serif', padding: [8, 0, 0, 2] } } } },\n    { type: 'text', left: 16, top: 78, z: 10, style: { text: sub, fill: ink.m, font: '12px Inter, Helvetica, sans-serif' } },\n  ];\n  if (pulse) {\n    g.push({ type: 'circle', right: 22, top: 18, z: 10, shape: { r: 5 }, style: { fill: color } });\n    g.push({ type: 'circle', right: 22, top: 18, z: 9, shape: { r: 5 }, style: { fill: color, opacity: 0.5 },\n      keyframeAnimation: { duration: 1800, loop: true, keyframes: [\n        { percent: 0, scaleX: 1, scaleY: 1, style: { opacity: 0.55 } }, { percent: 1, scaleX: 3.2, scaleY: 3.2, style: { opacity: 0 } }] },\n      originX: 5, originY: 5 });\n  }\n  const series = [];\n  if (spark && spark.length) {\n    if (strip) {\n      const band = (c, keep) => ({ type: 'line', step: 'end', showSymbol: false, lineStyle: { width: 0 }, areaStyle: { color: c, opacity: 0.9 },\n        data: spark.map(([t, v]) => [t, keep(v) ? 1 : 0]) });\n      series.push(band(GOOD, (v) => v >= 0.5), band(CRIT, (v) => v < 0.5));\n    } else series.push({ type: 'line', data: spark, smooth: 0.4, showSymbol: false, symbolSize: 8, lineStyle: { width: 2, color, cap: 'round' },\n          itemStyle: { color, borderColor: ink.surf, borderWidth: 2 }, areaStyle: { color: grad(color) } });\n  }\n  return {\n    ...base, graphic: g, series,\n    grid: strip ? { left: 16, right: 16, bottom: 14, height: 10 } : { left: 0, right: 0, bottom: 0, height: '36%' },\n    xAxis: { type: 'time', show: false }, yAxis: { type: 'value', show: false, scale: !strip, min: strip ? 0 : null, max: strip ? 1 : null },\n    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: ink.m, type: 'dashed' } },\n      formatter: (ps) => { const p0 = strip ? (ps.find((x) => x.value[1] === 1) || ps[0]) : ps[0]; const v = strip ? (p0.seriesIndex === 0 ? 1 : 0) : p0.value[1]; return `<div style=\"color:${ink.m}\">${new Date(p0.value[0]).toLocaleString()}</div><b>${fmt ? fmt(v) : v}</b>`; } },\n  };\n};\nconst ser = (ref) => frames.find((x) => x.refId === ref);\nconst lastOf = (ref) => { const x = ser(ref); return x ? last(x) : null; };\nconst ptsOf = (ref) => { const x = ser(ref); return x && tim(x) ? pts(x) : []; };\n\nconst p = ptsOf('A'), up = lastOf('A'), limit = lastOf('B');\nconst avail = p.length ? (100 * p.reduce((a, [, v]) => a + (v >= 0.5 ? 1 : 0), 0) / p.length) : null;\nconst on = up === 1;\nreturn card({ label: 'Internet', color: on ? GOOD : CRIT, valueColor: on ? GOOD : CRIT, value: up == null ? 'n/a' : on ? 'Online' : 'Offline', unit: '',\n  sub: `${avail == null ? '-' : avail.toFixed(1) + '%'} up in range · link ${bps(limit)}`, spark: p, strip: true, pulse: on,\n  fmt: (v) => v >= 0.5 ? 'Online' : 'Offline' });",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "volkovlabs-echarts-panel",
+      "title": "",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(fritzbox_device_uptime_seconds)",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst grad = (c) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + '66' }, { offset: 1, color: c + '00' }]);\nconst card = ({ label, color, value, unit, valueColor, sub, spark, fmt, strip, pulse }) => {\n  const g = [\n    { type: 'circle', left: 16, top: 19, z: 10, shape: { r: 4 }, style: { fill: color } },\n    { type: 'text', left: 28, top: 14, z: 10, style: { text: label.toUpperCase(), fill: ink.m, font: '600 11px Inter, Helvetica, sans-serif' } },\n    { type: 'text', left: 16, top: 36, z: 10, style: { text: `{v|${value}}{u|${unit ? ' ' + unit : ''}}`,\n      rich: { v: { fill: valueColor || ink.p, font: '600 30px Inter, Helvetica, sans-serif' }, u: { fill: ink.s, font: '500 14px Inter, Helvetica, sans-serif', padding: [8, 0, 0, 2] } } } },\n    { type: 'text', left: 16, top: 78, z: 10, style: { text: sub, fill: ink.m, font: '12px Inter, Helvetica, sans-serif' } },\n  ];\n  if (pulse) {\n    g.push({ type: 'circle', right: 22, top: 18, z: 10, shape: { r: 5 }, style: { fill: color } });\n    g.push({ type: 'circle', right: 22, top: 18, z: 9, shape: { r: 5 }, style: { fill: color, opacity: 0.5 },\n      keyframeAnimation: { duration: 1800, loop: true, keyframes: [\n        { percent: 0, scaleX: 1, scaleY: 1, style: { opacity: 0.55 } }, { percent: 1, scaleX: 3.2, scaleY: 3.2, style: { opacity: 0 } }] },\n      originX: 5, originY: 5 });\n  }\n  const series = [];\n  if (spark && spark.length) {\n    if (strip) {\n      const band = (c, keep) => ({ type: 'line', step: 'end', showSymbol: false, lineStyle: { width: 0 }, areaStyle: { color: c, opacity: 0.9 },\n        data: spark.map(([t, v]) => [t, keep(v) ? 1 : 0]) });\n      series.push(band(GOOD, (v) => v >= 0.5), band(CRIT, (v) => v < 0.5));\n    } else series.push({ type: 'line', data: spark, smooth: 0.4, showSymbol: false, symbolSize: 8, lineStyle: { width: 2, color, cap: 'round' },\n          itemStyle: { color, borderColor: ink.surf, borderWidth: 2 }, areaStyle: { color: grad(color) } });\n  }\n  return {\n    ...base, graphic: g, series,\n    grid: strip ? { left: 16, right: 16, bottom: 14, height: 10 } : { left: 0, right: 0, bottom: 0, height: '36%' },\n    xAxis: { type: 'time', show: false }, yAxis: { type: 'value', show: false, scale: !strip, min: strip ? 0 : null, max: strip ? 1 : null },\n    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: ink.m, type: 'dashed' } },\n      formatter: (ps) => { const p0 = strip ? (ps.find((x) => x.value[1] === 1) || ps[0]) : ps[0]; const v = strip ? (p0.seriesIndex === 0 ? 1 : 0) : p0.value[1]; return `<div style=\"color:${ink.m}\">${new Date(p0.value[0]).toLocaleString()}</div><b>${fmt ? fmt(v) : v}</b>`; } },\n  };\n};\nconst ser = (ref) => frames.find((x) => x.refId === ref);\nconst lastOf = (ref) => { const x = ser(ref); return x ? last(x) : null; };\nconst ptsOf = (ref) => { const x = ser(ref); return x && tim(x) ? pts(x) : []; };\n\nconst u = lastOf('A') || 0;\nconst since = new Date(Date.now() - u * 1000);\nreturn card({ label: 'Router uptime', color: C[4], value: (u / 86400).toFixed(1), unit: 'days',\n  sub: 'last restart ' + since.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }),\n  spark: ptsOf('A'), fmt: (v) => (v / 86400).toFixed(2) + ' days' });",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "volkovlabs-echarts-panel",
+      "title": "",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(fritzbox_dsl_rate_current_bit_per_second{network_io_direction=\"receive\"})",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(fritzbox_dsl_rate_max_bit_per_second{network_io_direction=\"receive\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst grad = (c) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + '66' }, { offset: 1, color: c + '00' }]);\nconst card = ({ label, color, value, unit, valueColor, sub, spark, fmt, strip, pulse }) => {\n  const g = [\n    { type: 'circle', left: 16, top: 19, z: 10, shape: { r: 4 }, style: { fill: color } },\n    { type: 'text', left: 28, top: 14, z: 10, style: { text: label.toUpperCase(), fill: ink.m, font: '600 11px Inter, Helvetica, sans-serif' } },\n    { type: 'text', left: 16, top: 36, z: 10, style: { text: `{v|${value}}{u|${unit ? ' ' + unit : ''}}`,\n      rich: { v: { fill: valueColor || ink.p, font: '600 30px Inter, Helvetica, sans-serif' }, u: { fill: ink.s, font: '500 14px Inter, Helvetica, sans-serif', padding: [8, 0, 0, 2] } } } },\n    { type: 'text', left: 16, top: 78, z: 10, style: { text: sub, fill: ink.m, font: '12px Inter, Helvetica, sans-serif' } },\n  ];\n  if (pulse) {\n    g.push({ type: 'circle', right: 22, top: 18, z: 10, shape: { r: 5 }, style: { fill: color } });\n    g.push({ type: 'circle', right: 22, top: 18, z: 9, shape: { r: 5 }, style: { fill: color, opacity: 0.5 },\n      keyframeAnimation: { duration: 1800, loop: true, keyframes: [\n        { percent: 0, scaleX: 1, scaleY: 1, style: { opacity: 0.55 } }, { percent: 1, scaleX: 3.2, scaleY: 3.2, style: { opacity: 0 } }] },\n      originX: 5, originY: 5 });\n  }\n  const series = [];\n  if (spark && spark.length) {\n    if (strip) {\n      const band = (c, keep) => ({ type: 'line', step: 'end', showSymbol: false, lineStyle: { width: 0 }, areaStyle: { color: c, opacity: 0.9 },\n        data: spark.map(([t, v]) => [t, keep(v) ? 1 : 0]) });\n      series.push(band(GOOD, (v) => v >= 0.5), band(CRIT, (v) => v < 0.5));\n    } else series.push({ type: 'line', data: spark, smooth: 0.4, showSymbol: false, symbolSize: 8, lineStyle: { width: 2, color, cap: 'round' },\n          itemStyle: { color, borderColor: ink.surf, borderWidth: 2 }, areaStyle: { color: grad(color) } });\n  }\n  return {\n    ...base, graphic: g, series,\n    grid: strip ? { left: 16, right: 16, bottom: 14, height: 10 } : { left: 0, right: 0, bottom: 0, height: '36%' },\n    xAxis: { type: 'time', show: false }, yAxis: { type: 'value', show: false, scale: !strip, min: strip ? 0 : null, max: strip ? 1 : null },\n    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: ink.m, type: 'dashed' } },\n      formatter: (ps) => { const p0 = strip ? (ps.find((x) => x.value[1] === 1) || ps[0]) : ps[0]; const v = strip ? (p0.seriesIndex === 0 ? 1 : 0) : p0.value[1]; return `<div style=\"color:${ink.m}\">${new Date(p0.value[0]).toLocaleString()}</div><b>${fmt ? fmt(v) : v}</b>`; } },\n  };\n};\nconst ser = (ref) => frames.find((x) => x.refId === ref);\nconst lastOf = (ref) => { const x = ser(ref); return x ? last(x) : null; };\nconst ptsOf = (ref) => { const x = ser(ref); return x && tim(x) ? pts(x) : []; };\n\nconst cur = lastOf('A') || 0, max = lastOf('B') || 0;\nreturn card({ label: 'DSL downstream', color: C[0], value: (cur / 1e6).toFixed(1), unit: 'Mb/s',\n  sub: max ? `${Math.round(100 * cur / max)}% of ${(max / 1e6).toFixed(0)} Mb/s attainable` : '', spark: ptsOf('A'), fmt: bps });",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "volkovlabs-echarts-panel",
+      "title": "",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(fritzbox_dsl_rate_current_bit_per_second{network_io_direction=\"transmit\"})",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(fritzbox_dsl_rate_max_bit_per_second{network_io_direction=\"transmit\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst grad = (c) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + '66' }, { offset: 1, color: c + '00' }]);\nconst card = ({ label, color, value, unit, valueColor, sub, spark, fmt, strip, pulse }) => {\n  const g = [\n    { type: 'circle', left: 16, top: 19, z: 10, shape: { r: 4 }, style: { fill: color } },\n    { type: 'text', left: 28, top: 14, z: 10, style: { text: label.toUpperCase(), fill: ink.m, font: '600 11px Inter, Helvetica, sans-serif' } },\n    { type: 'text', left: 16, top: 36, z: 10, style: { text: `{v|${value}}{u|${unit ? ' ' + unit : ''}}`,\n      rich: { v: { fill: valueColor || ink.p, font: '600 30px Inter, Helvetica, sans-serif' }, u: { fill: ink.s, font: '500 14px Inter, Helvetica, sans-serif', padding: [8, 0, 0, 2] } } } },\n    { type: 'text', left: 16, top: 78, z: 10, style: { text: sub, fill: ink.m, font: '12px Inter, Helvetica, sans-serif' } },\n  ];\n  if (pulse) {\n    g.push({ type: 'circle', right: 22, top: 18, z: 10, shape: { r: 5 }, style: { fill: color } });\n    g.push({ type: 'circle', right: 22, top: 18, z: 9, shape: { r: 5 }, style: { fill: color, opacity: 0.5 },\n      keyframeAnimation: { duration: 1800, loop: true, keyframes: [\n        { percent: 0, scaleX: 1, scaleY: 1, style: { opacity: 0.55 } }, { percent: 1, scaleX: 3.2, scaleY: 3.2, style: { opacity: 0 } }] },\n      originX: 5, originY: 5 });\n  }\n  const series = [];\n  if (spark && spark.length) {\n    if (strip) {\n      const band = (c, keep) => ({ type: 'line', step: 'end', showSymbol: false, lineStyle: { width: 0 }, areaStyle: { color: c, opacity: 0.9 },\n        data: spark.map(([t, v]) => [t, keep(v) ? 1 : 0]) });\n      series.push(band(GOOD, (v) => v >= 0.5), band(CRIT, (v) => v < 0.5));\n    } else series.push({ type: 'line', data: spark, smooth: 0.4, showSymbol: false, symbolSize: 8, lineStyle: { width: 2, color, cap: 'round' },\n          itemStyle: { color, borderColor: ink.surf, borderWidth: 2 }, areaStyle: { color: grad(color) } });\n  }\n  return {\n    ...base, graphic: g, series,\n    grid: strip ? { left: 16, right: 16, bottom: 14, height: 10 } : { left: 0, right: 0, bottom: 0, height: '36%' },\n    xAxis: { type: 'time', show: false }, yAxis: { type: 'value', show: false, scale: !strip, min: strip ? 0 : null, max: strip ? 1 : null },\n    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: ink.m, type: 'dashed' } },\n      formatter: (ps) => { const p0 = strip ? (ps.find((x) => x.value[1] === 1) || ps[0]) : ps[0]; const v = strip ? (p0.seriesIndex === 0 ? 1 : 0) : p0.value[1]; return `<div style=\"color:${ink.m}\">${new Date(p0.value[0]).toLocaleString()}</div><b>${fmt ? fmt(v) : v}</b>`; } },\n  };\n};\nconst ser = (ref) => frames.find((x) => x.refId === ref);\nconst lastOf = (ref) => { const x = ser(ref); return x ? last(x) : null; };\nconst ptsOf = (ref) => { const x = ser(ref); return x && tim(x) ? pts(x) : []; };\n\nconst cur = lastOf('A') || 0, max = lastOf('B') || 0;\nreturn card({ label: 'DSL upstream', color: C[1], value: (cur / 1e6).toFixed(1), unit: 'Mb/s',\n  sub: max ? `${Math.round(100 * cur / max)}% of ${(max / 1e6).toFixed(0)} Mb/s attainable` : '', spark: ptsOf('A'), fmt: bps });",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "volkovlabs-echarts-panel",
+      "title": "",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(fritzbox_hosts_active)",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(fritzbox_hosts_total)",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst grad = (c) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + '66' }, { offset: 1, color: c + '00' }]);\nconst card = ({ label, color, value, unit, valueColor, sub, spark, fmt, strip, pulse }) => {\n  const g = [\n    { type: 'circle', left: 16, top: 19, z: 10, shape: { r: 4 }, style: { fill: color } },\n    { type: 'text', left: 28, top: 14, z: 10, style: { text: label.toUpperCase(), fill: ink.m, font: '600 11px Inter, Helvetica, sans-serif' } },\n    { type: 'text', left: 16, top: 36, z: 10, style: { text: `{v|${value}}{u|${unit ? ' ' + unit : ''}}`,\n      rich: { v: { fill: valueColor || ink.p, font: '600 30px Inter, Helvetica, sans-serif' }, u: { fill: ink.s, font: '500 14px Inter, Helvetica, sans-serif', padding: [8, 0, 0, 2] } } } },\n    { type: 'text', left: 16, top: 78, z: 10, style: { text: sub, fill: ink.m, font: '12px Inter, Helvetica, sans-serif' } },\n  ];\n  if (pulse) {\n    g.push({ type: 'circle', right: 22, top: 18, z: 10, shape: { r: 5 }, style: { fill: color } });\n    g.push({ type: 'circle', right: 22, top: 18, z: 9, shape: { r: 5 }, style: { fill: color, opacity: 0.5 },\n      keyframeAnimation: { duration: 1800, loop: true, keyframes: [\n        { percent: 0, scaleX: 1, scaleY: 1, style: { opacity: 0.55 } }, { percent: 1, scaleX: 3.2, scaleY: 3.2, style: { opacity: 0 } }] },\n      originX: 5, originY: 5 });\n  }\n  const series = [];\n  if (spark && spark.length) {\n    if (strip) {\n      const band = (c, keep) => ({ type: 'line', step: 'end', showSymbol: false, lineStyle: { width: 0 }, areaStyle: { color: c, opacity: 0.9 },\n        data: spark.map(([t, v]) => [t, keep(v) ? 1 : 0]) });\n      series.push(band(GOOD, (v) => v >= 0.5), band(CRIT, (v) => v < 0.5));\n    } else series.push({ type: 'line', data: spark, smooth: 0.4, showSymbol: false, symbolSize: 8, lineStyle: { width: 2, color, cap: 'round' },\n          itemStyle: { color, borderColor: ink.surf, borderWidth: 2 }, areaStyle: { color: grad(color) } });\n  }\n  return {\n    ...base, graphic: g, series,\n    grid: strip ? { left: 16, right: 16, bottom: 14, height: 10 } : { left: 0, right: 0, bottom: 0, height: '36%' },\n    xAxis: { type: 'time', show: false }, yAxis: { type: 'value', show: false, scale: !strip, min: strip ? 0 : null, max: strip ? 1 : null },\n    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: ink.m, type: 'dashed' } },\n      formatter: (ps) => { const p0 = strip ? (ps.find((x) => x.value[1] === 1) || ps[0]) : ps[0]; const v = strip ? (p0.seriesIndex === 0 ? 1 : 0) : p0.value[1]; return `<div style=\"color:${ink.m}\">${new Date(p0.value[0]).toLocaleString()}</div><b>${fmt ? fmt(v) : v}</b>`; } },\n  };\n};\nconst ser = (ref) => frames.find((x) => x.refId === ref);\nconst lastOf = (ref) => { const x = ser(ref); return x ? last(x) : null; };\nconst ptsOf = (ref) => { const x = ser(ref); return x && tim(x) ? pts(x) : []; };\n\nconst n = lastOf('A'), total = lastOf('B');\nreturn card({ label: 'Devices online', color: C[2], value: n == null ? '-' : String(Math.round(n)), unit: '',\n  sub: total ? `of ${Math.round(total)} known devices` : '', spark: ptsOf('A'), fmt: (v) => Math.round(v) + ' online' });",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "volkovlabs-echarts-panel",
+      "title": "",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum(fritzbox_wlan_clients)",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "count(fritzbox_wlan_clients)",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst grad = (c) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + '66' }, { offset: 1, color: c + '00' }]);\nconst card = ({ label, color, value, unit, valueColor, sub, spark, fmt, strip, pulse }) => {\n  const g = [\n    { type: 'circle', left: 16, top: 19, z: 10, shape: { r: 4 }, style: { fill: color } },\n    { type: 'text', left: 28, top: 14, z: 10, style: { text: label.toUpperCase(), fill: ink.m, font: '600 11px Inter, Helvetica, sans-serif' } },\n    { type: 'text', left: 16, top: 36, z: 10, style: { text: `{v|${value}}{u|${unit ? ' ' + unit : ''}}`,\n      rich: { v: { fill: valueColor || ink.p, font: '600 30px Inter, Helvetica, sans-serif' }, u: { fill: ink.s, font: '500 14px Inter, Helvetica, sans-serif', padding: [8, 0, 0, 2] } } } },\n    { type: 'text', left: 16, top: 78, z: 10, style: { text: sub, fill: ink.m, font: '12px Inter, Helvetica, sans-serif' } },\n  ];\n  if (pulse) {\n    g.push({ type: 'circle', right: 22, top: 18, z: 10, shape: { r: 5 }, style: { fill: color } });\n    g.push({ type: 'circle', right: 22, top: 18, z: 9, shape: { r: 5 }, style: { fill: color, opacity: 0.5 },\n      keyframeAnimation: { duration: 1800, loop: true, keyframes: [\n        { percent: 0, scaleX: 1, scaleY: 1, style: { opacity: 0.55 } }, { percent: 1, scaleX: 3.2, scaleY: 3.2, style: { opacity: 0 } }] },\n      originX: 5, originY: 5 });\n  }\n  const series = [];\n  if (spark && spark.length) {\n    if (strip) {\n      const band = (c, keep) => ({ type: 'line', step: 'end', showSymbol: false, lineStyle: { width: 0 }, areaStyle: { color: c, opacity: 0.9 },\n        data: spark.map(([t, v]) => [t, keep(v) ? 1 : 0]) });\n      series.push(band(GOOD, (v) => v >= 0.5), band(CRIT, (v) => v < 0.5));\n    } else series.push({ type: 'line', data: spark, smooth: 0.4, showSymbol: false, symbolSize: 8, lineStyle: { width: 2, color, cap: 'round' },\n          itemStyle: { color, borderColor: ink.surf, borderWidth: 2 }, areaStyle: { color: grad(color) } });\n  }\n  return {\n    ...base, graphic: g, series,\n    grid: strip ? { left: 16, right: 16, bottom: 14, height: 10 } : { left: 0, right: 0, bottom: 0, height: '36%' },\n    xAxis: { type: 'time', show: false }, yAxis: { type: 'value', show: false, scale: !strip, min: strip ? 0 : null, max: strip ? 1 : null },\n    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: ink.m, type: 'dashed' } },\n      formatter: (ps) => { const p0 = strip ? (ps.find((x) => x.value[1] === 1) || ps[0]) : ps[0]; const v = strip ? (p0.seriesIndex === 0 ? 1 : 0) : p0.value[1]; return `<div style=\"color:${ink.m}\">${new Date(p0.value[0]).toLocaleString()}</div><b>${fmt ? fmt(v) : v}</b>`; } },\n  };\n};\nconst ser = (ref) => frames.find((x) => x.refId === ref);\nconst lastOf = (ref) => { const x = ser(ref); return x ? last(x) : null; };\nconst ptsOf = (ref) => { const x = ser(ref); return x && tim(x) ? pts(x) : []; };\n\nconst p = ptsOf('A'), n = lastOf('A'), radios = lastOf('B');\nconst peak = p.reduce((a, [, v]) => Math.max(a, v || 0), 0);\nreturn card({ label: 'WLAN clients', color: C[3], value: n == null ? '-' : String(Math.round(n)), unit: '',\n  sub: `${radios ? Math.round(radios) + ' radios · ' : ''}peak ${Math.round(peak)} in range`, spark: p, fmt: (v) => Math.round(v) + ' clients' });",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "volkovlabs-echarts-panel",
+      "title": "Home network, live",
+      "description": "Particle speed and size on the WAN link follow live download and upload throughput. Device links show connectivity, not per-device traffic.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_hosts_info_ratio{active=\"1\"}",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (network_io_direction) (rate(hw_network_io_bytes_total{hw_name=\"wan\"}[$__rate_interval])) * 8",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "max(hw_network_bandwidth_limit_bytes_per_second{hw_id=\"fritzbox.wan\"}) * 8",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst hosts = frames.filter((s) => s.refId === 'A').map((s) => lab(s)).filter((l) => l.hostname !== 'fritz.box');\nconst rate = (d) => { const s = frames.find((x) => x.refId === 'B' && lab(x).network_io_direction === d); return s ? last(s) || 0 : 0; };\nconst linkS = frames.find((x) => x.refId === 'C'); const link = (linkS && last(linkS)) || 1;\nconst rx = rate('receive'), tx = rate('transmit');\nconst kindOf = (l) => l.guest === '1' ? 'Guest Wi-Fi' : l.interface_type === '802.11' ? 'Wi-Fi' : l.interface_type === 'Ethernet' ? 'Ethernet' : 'Other';\nconst order = ['Wi-Fi', 'Ethernet', 'Guest Wi-Fi', 'Other'];\nconst hubColor = { 'Wi-Fi': C[0], 'Ethernet': C[1], 'Guest Wi-Fi': C[2], 'Other': C[3] };\nconst devs = hosts.map((l) => ({ l, k: kindOf(l), n: l.friendly_name || l.hostname || l.mac }))\n  .sort((a, b) => order.indexOf(a.k) - order.indexOf(b.k) || a.n.localeCompare(b.n));\nconst N = devs.length, ys = devs.map((_, i) => N > 1 ? 6 + (i * 88) / (N - 1) : 50);\nconst hubs = order.filter((k) => devs.some((d) => d.k === k)).map((k) => {\n  const idx = devs.map((d, i) => (d.k === k ? i : -1)).filter((i) => i >= 0);\n  return { k, y: idx.reduce((a, i) => a + ys[i], 0) / idx.length, n: idx.length };\n});\nconst P = { inet: [6, 50], box: [30, 50] };\nconst nodes = [\n  { name: 'Internet', value: P.inet, symbol: 'circle', symbolSize: 34, itemStyle: { color: ink.surf, borderColor: ink.s, borderWidth: 2 },\n    label: { show: true, position: 'bottom', distance: 8, formatter: `{t|Internet}\\n{d|down ${bps(rx)}}\\n{u|up ${bps(tx)}}`,\n      rich: { t: { color: ink.p, fontWeight: 600, fontSize: 12, lineHeight: 18 }, d: { color: C[0], fontSize: 11 }, u: { color: C[1], fontSize: 11 } } } },\n  { name: 'FRITZ!Box', value: P.box, symbol: 'roundRect', symbolSize: [46, 30], itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [{ offset: 0, color: C[0] }, { offset: 1, color: C[2] }]), shadowBlur: 18, shadowColor: C[0] + '88' },\n    label: { show: true, position: 'bottom', distance: 8, color: ink.p, fontWeight: 600, fontSize: 12 } },\n  ...hubs.map((h) => ({ name: h.k, value: [58, h.y], symbolSize: 18, itemStyle: { color: hubColor[h.k], borderColor: ink.surf, borderWidth: 2 },\n    label: { show: true, position: 'top', distance: 6, color: ink.s, fontSize: 11, formatter: `${h.k} · ${h.n}` } })),\n  ...devs.map((d, i) => ({ name: d.n + '#' + i, value: [84, ys[i]], symbolSize: 9, itemStyle: { color: hubColor[d.k], borderColor: ink.surf, borderWidth: 2 },\n    tip: `${d.n}<br/><span style=\"color:${ink.m}\">${d.l.ip || ''} · ${d.k}</span>`,\n    label: { show: true, position: 'right', distance: 6, color: ink.s, fontSize: 11, formatter: d.n } })),\n];\nconst links = [\n  { source: 'Internet', target: 'FRITZ!Box', lineStyle: { width: 3, color: ink.base, curveness: 0 } },\n  ...hubs.map((h) => ({ source: 'FRITZ!Box', target: h.k, lineStyle: { color: hubColor[h.k] + '66', width: 2, curveness: 0.15 } })),\n  ...devs.map((d, i) => ({ source: d.k, target: d.n + '#' + i, lineStyle: { color: hubColor[d.k] + '44', width: 1.2, curveness: 0.1 } })),\n];\nconst speed = (r) => Math.max(0.5, 5 - 4.5 * Math.sqrt(Math.min(1, r / link)));\nconst flow = (from, to, c, r, curve) => ({ type: 'lines', coordinateSystem: 'cartesian2d', zlevel: 2, silent: true,\n  effect: { show: true, period: speed(r), trailLength: 0.35, symbol: 'circle', symbolSize: 3 + 5 * Math.sqrt(Math.min(1, r / link)), color: c },\n  lineStyle: { opacity: 0, curveness: curve }, data: [{ coords: [from, to] }] });\nconst ambient = { type: 'lines', coordinateSystem: 'cartesian2d', zlevel: 2, silent: true,\n  effect: { show: true, period: 3.5, trailLength: 0.2, symbol: 'circle', symbolSize: 3 },\n  lineStyle: { opacity: 0, curveness: 0.1 },\n  data: devs.map((d, i) => { const h = hubs.find((x) => x.k === d.k); return { coords: [[58, h.y], [84, ys[i]]], effect: { color: hubColor[d.k] } }; }) };\nreturn {\n  ...base,\n  grid: { left: 24, right: 150, top: 24, bottom: 36 },\n  xAxis: { type: 'value', min: 0, max: 100, show: false }, yAxis: { type: 'value', min: 0, max: 100, show: false, inverse: true },\n  tooltip: { ...tip, formatter: (p) => p.dataType === 'node' ? (p.data.tip || p.name) : '' },\n  graphic: [\n    { type: 'circle', left: 12, top: 10, shape: { r: 4 }, style: { fill: CRIT },\n      keyframeAnimation: { duration: 1400, loop: true, keyframes: [{ percent: 0, style: { opacity: 1 } }, { percent: 0.5, style: { opacity: 0.2 } }, { percent: 1, style: { opacity: 1 } }] } },\n    { type: 'text', left: 22, top: 5, style: { text: 'LIVE', fill: ink.m, font: '700 10px Inter, Helvetica, sans-serif' } },\n  ],\n  series: [\n    { type: 'graph', coordinateSystem: 'cartesian2d', layout: 'none', roam: false, data: nodes, links, edgeSymbol: ['none', 'none'],\n      emphasis: { focus: 'adjacency', lineStyle: { width: 3 } }, labelLayout: { hideOverlap: true } },\n    flow(P.inet, P.box, C[0], rx, 0.18),\n    flow(P.box, P.inet, C[1], tx, 0.18),\n    ambient,\n  ],\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "volkovlabs-echarts-panel",
+      "title": "Live speed",
+      "description": "Current WAN throughput against the DSL sync rate.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 6,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (network_io_direction) (rate(hw_network_io_bytes_total{hw_name=\"wan\"}[$__rate_interval])) * 8",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_dsl_rate_current_bit_per_second",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst v = (ref, d) => { const s = frames.find((x) => x.refId === ref && lab(x).network_io_direction === d); return s ? last(s) || 0 : 0; };\nconst meter = (name, d, c, cy) => {\n  const cur = v('A', d) / 1e6, raw = Math.max(1, v('B', d) / 1e6);\n  const step = raw <= 60 ? 10 : raw <= 300 ? 20 : 100, max = Math.ceil(raw / step) * step;\n  return { type: 'gauge', center: ['50%', cy], radius: '46%', startAngle: 200, endAngle: -20, min: 0, max, splitNumber: max / step,\n    animationDurationUpdate: 1600, animationEasingUpdate: 'elasticOut',\n    progress: { show: true, width: 8, roundCap: true, itemStyle: { color: c } },\n    axisLine: { roundCap: true, lineStyle: { width: 8, color: [[1, ink.grid]] } },\n    pointer: { icon: 'path://M2.9,0.7L2.9,0.7c1.4,0,2.6,1.2,2.6,2.6v115c0,1.4-1.2,2.6-2.6,2.6l0,0c-1.4,0-2.6-1.2-2.6-2.6V3.3C0.3,1.9,1.4,0.7,2.9,0.7z',\n      width: 5, length: '62%', offsetCenter: [0, '6%'], itemStyle: { color: c, shadowBlur: 8, shadowColor: c } },\n    anchor: { show: true, size: 12, itemStyle: { color: ink.surf, borderColor: c, borderWidth: 3 } },\n    axisTick: { distance: -16, length: 4, lineStyle: { color: ink.base, width: 1 } },\n    splitLine: { distance: -18, length: 8, lineStyle: { color: ink.m, width: 1.5 } },\n    axisLabel: { distance: 14, color: ink.m, fontSize: 10 },\n    title: { offsetCenter: [0, '72%'], color: ink.s, fontSize: 12 },\n    detail: { valueAnimation: true, offsetCenter: [0, '42%'], formatter: (x) => `{v|${x < 10 ? x.toFixed(2) : x.toFixed(1)}}{u| Mb/s}`,\n      rich: { v: { fontSize: 20, fontWeight: 600, color: ink.p }, u: { fontSize: 11, color: ink.s } } },\n    data: [{ value: +cur.toFixed(3), name }] };\n};\nreturn { ...base, series: [meter('Download', 'receive', C[0], '28%'), meter('Upload', 'transmit', C[1], '76%')] };",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "timeFrom": "15m",
+      "id": 17,
+      "type": "volkovlabs-echarts-panel",
+      "title": "Live traffic pulse",
+      "description": "Last 15 minutes of WAN traffic. The rippling dot marks the newest sample.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 5,
+        "w": 6,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (network_io_direction) (rate(hw_network_io_bytes_total{hw_name=\"wan\"}[$__rate_interval])) * 8",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst mk = (d) => { const s = frames.find((x) => lab(x).network_io_direction === d); return s ? pts(s) : []; };\nconst rx = mk('receive'), tx = mk('transmit');\nconst tail = (a) => (a.length ? [a[a.length - 1]] : []);\nconst now = rx.length ? rx[rx.length - 1][1] : 0;\nconst line = (name, data, c) => ({ name, type: 'line', data, smooth: 0.4, showSymbol: false, itemStyle: { color: c }, lineStyle: { width: 2, color: c, cap: 'round' },\n  areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + '55' }, { offset: 1, color: c + '00' }]) } });\nconst dot = (name, data, c) => ({ name, type: 'effectScatter', data, symbolSize: 9, zlevel: 1, showEffectOn: 'render',\n  rippleEffect: { brushType: 'stroke', scale: 3.6, period: 2.4 }, itemStyle: { color: c, borderColor: ink.surf, borderWidth: 2 }, tooltip: { show: false } });\nreturn {\n  ...base,\n  title: { text: bps(now), subtext: 'download right now', left: 8, top: 0,\n    textStyle: { fontSize: 22, fontWeight: 600, color: ink.p }, subtextStyle: { fontSize: 11, color: ink.m }, itemGap: 2 },\n  legend: { top: 4, right: 8, icon: 'roundRect', itemWidth: 12, itemHeight: 4, data: ['Download', 'Upload'], textStyle: { color: ink.s } },\n  grid: { left: 8, right: 16, top: 62, bottom: 24, containLabel: true },\n  tooltip: { ...tip, trigger: 'axis', formatter: (ps) => `<div style=\"color:${ink.m};margin-bottom:4px\">${new Date(ps[0].value[0]).toLocaleTimeString()}</div>` +\n    ps.filter((p) => p.seriesType === 'line').map((p) => `${p.marker}${p.seriesName}<b style=\"float:right;margin-left:24px\">${bps(p.value[1])}</b>`).join('<br/>') },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: ink.base } }, axisTick: { show: false }, axisLabel: { color: ink.m, hideOverlap: true }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: ink.m, formatter: (x) => bps(x) }, splitLine: { lineStyle: { color: ink.grid } } },\n  animationDurationUpdate: 1000, animationEasingUpdate: 'cubicInOut',\n  series: [line('Download', rx, C[0]), line('Upload', tx, C[1]), dot('Download', tail(rx), C[0]), dot('Upload', tail(tx), C[1])],\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "volkovlabs-echarts-panel",
+      "title": "WAN throughput",
+      "description": "Download above the baseline, upload mirrored below. Drag the slider or scroll to zoom.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 16,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (network_io_direction) (rate(hw_network_io_bytes_total{hw_name=\"wan\"}[$__rate_interval])) * 8",
+          "legendFormat": "{{network_io_direction}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst find = (d) => frames.find((s) => lab(s).network_io_direction === d);\nconst rxS = find('receive'), txS = find('transmit');\nconst rx = rxS ? pts(rxS) : [];\nconst tx = txS ? pts(txS).map(([t, v]) => [t, -v]) : [];\nconst grad = (c, up) => new echarts.graphic.LinearGradient(0, up ? 0 : 1, 0, up ? 1 : 0,\n  [{ offset: 0, color: c + 'b3' }, { offset: 1, color: c + '05' }]);\nconst line = (name, data, c, up) => ({\n  name, type: 'line', data, smooth: 0.35, showSymbol: false, symbolSize: 8,\n  lineStyle: { width: 2, color: c, cap: 'round', join: 'round' },\n  itemStyle: { color: c, borderColor: ink.surf, borderWidth: 2 },\n  areaStyle: { color: grad(c, up) }, emphasis: { focus: 'series' },\n});\nconst down = line('Download', rx, C[0], true);\ndown.markLine = { silent: true, symbol: 'none', label: { show: false }, lineStyle: { color: ink.base, width: 1, type: 'solid' }, data: [{ yAxis: 0 }] };\ndown.markPoint = { symbol: 'circle', symbolSize: 8, itemStyle: { color: C[0], borderColor: ink.surf, borderWidth: 2 },\n  label: { position: 'top', color: ink.s, fontSize: 11, formatter: (p) => 'peak ' + bps(p.value) }, data: [{ type: 'max' }] };\nconst up = line('Upload', tx, C[1], false);\nreturn {\n  ...base,\n  legend: { top: 0, right: 8, icon: 'roundRect', itemWidth: 12, itemHeight: 4, textStyle: { color: ink.s } },\n  grid: { left: 72, right: 20, top: 36, bottom: 52 },\n  tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: ink.m, type: 'dashed' } },\n    formatter: (ps) => `<div style=\"color:${ink.m};margin-bottom:4px\">${new Date(ps[0].value[0]).toLocaleString()}</div>` +\n      ps.map((p) => `${p.marker}${p.seriesName}<b style=\"float:right;margin-left:24px\">${bps(p.value[1])}</b>`).join('<br/>') },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: ink.base } }, axisTick: { show: false }, axisLabel: { color: ink.m, hideOverlap: true }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: ink.m, formatter: (v) => bps(v) }, splitLine: { lineStyle: { color: ink.grid } } },\n  dataZoom: [{ type: 'inside' }, { type: 'slider', height: 16, bottom: 10, borderColor: 'transparent', backgroundColor: ink.grid,\n    fillerColor: C[0] + '33', handleStyle: { color: C[0], borderColor: C[0] }, moveHandleStyle: { color: C[0] }, textStyle: { color: ink.m },\n    dataBackground: { lineStyle: { color: ink.m, opacity: 0.4 }, areaStyle: { color: ink.m, opacity: 0.15 } } }],\n  series: [down, up],\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "volkovlabs-echarts-panel",
+      "title": "DSL line capacity",
+      "description": "Current sync rate as a share of the attainable rate the line could sync at.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 17,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_dsl_rate_current_bit_per_second",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_dsl_rate_max_bit_per_second",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst val = (ref, dir) => { const s = frames.find((x) => x.refId === ref && lab(x).network_io_direction === dir); return s ? last(s) || 0 : 0; };\nconst ring = (name, dir, c, cx) => {\n  const cur = val('A', dir), max = val('B', dir) || 1, pct = Math.min(100, (cur / max) * 100);\n  return {\n    type: 'gauge', center: [cx, '54%'], radius: '82%', startAngle: 225, endAngle: -45, min: 0, max: 100,\n    progress: { show: true, roundCap: true, width: 14, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: c + '80' }, { offset: 1, color: c }]) } },\n    axisLine: { roundCap: true, lineStyle: { width: 14, color: [[1, ink.grid]] } },\n    pointer: { show: false }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, anchor: { show: false },\n    title: { offsetCenter: [0, '70%'], color: ink.s, fontSize: 13, fontWeight: 500 },\n    detail: { offsetCenter: [0, '-2%'], valueAnimation: true,\n      formatter: () => `{v|${(cur / 1e6).toFixed(1)}}{u| Mb/s}\\n{p|${pct.toFixed(0)}% of ${(max / 1e6).toFixed(0)} Mb/s}`,\n      rich: { v: { fontSize: 30, fontWeight: 600, color: ink.p }, u: { fontSize: 13, color: ink.s }, p: { fontSize: 11, color: ink.m, padding: [8, 0, 0, 0] } } },\n    data: [{ value: +pct.toFixed(1), name }],\n  };\n};\nreturn { ...base, tooltip: { show: false }, series: [ring('Downstream', 'receive', C[0], '25%'), ring('Upstream', 'transmit', C[1], '75%')] };",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "volkovlabs-echarts-panel",
+      "title": "WLAN clients by radio",
+      "description": "Band derived from the radio channel.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_wlan_clients",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_wlan_channel_ratio",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst chan = {};\nframes.filter((s) => s.refId === 'B').forEach((s) => { chan[lab(s).hw_id] = last(s); });\nconst band = (ch) => ch == null ? '' : ch <= 14 ? '2.4 GHz' : ch < 170 ? '5 GHz' : '6 GHz';\nconst data = frames.filter((s) => s.refId === 'A')\n  .map((s) => ({ l: lab(s), v: last(s) || 0 }))\n  .sort((a, b) => String(a.l.hw_id).localeCompare(String(b.l.hw_id)))\n  .map(({ l, v }, i) => ({ name: `${l.ssid} · ${band(chan[l.hw_id])}`, value: v, ch: chan[l.hw_id], itemStyle: { color: C[i % C.length] } }));\nconst total = data.reduce((a, d) => a + d.value, 0);\nreturn {\n  ...base,\n  title: { text: String(total), subtext: 'clients', left: '31%', top: '37%', textAlign: 'center',\n    textStyle: { fontSize: 32, fontWeight: 600, color: ink.p }, subtextStyle: { fontSize: 12, color: ink.m }, itemGap: 2 },\n  tooltip: { ...tip, trigger: 'item', formatter: (p) => `${p.marker}${p.name}<br/><b>${p.value}</b> clients · channel ${p.data.ch}` },\n  legend: { orient: 'vertical', left: '62%', top: 'middle', icon: 'circle', itemWidth: 8, itemGap: 14,\n    formatter: (n) => { const d = data.find((x) => x.name === n); return `${n}   {b|${d ? d.value : 0}}`; },\n    textStyle: { color: ink.s, fontSize: 12, rich: { b: { color: ink.p, fontWeight: 600, fontSize: 13 } } } },\n  series: [{ type: 'pie', radius: ['60%', '84%'], center: ['31%', '50%'], padAngle: 2, avoidLabelOverlap: true,\n    itemStyle: { borderRadius: 4, borderColor: ink.surf, borderWidth: 2 }, label: { show: false }, labelLine: { show: false },\n    emphasis: { scale: true, scaleSize: 6 }, data }],\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "volkovlabs-echarts-panel",
+      "title": "Devices",
+      "description": "Known devices: online or offline, then how they connect. Click a ring to drill in.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 27,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "count by (interface_type, active, guest) (fritzbox_hosts_info_ratio)",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst groups = { Online: {}, Offline: {} };\nframes.forEach((s) => {\n  const l = lab(s), on = l.active === '1', n = last(s) || 0;\n  const k = l.guest === '1' ? 'Guest Wi-Fi' : l.interface_type === '802.11' ? 'Wi-Fi' : l.interface_type === 'Ethernet' ? 'Ethernet' : on ? 'Other' : 'Away';\n  const g = groups[on ? 'Online' : 'Offline']; g[k] = (g[k] || 0) + n;\n});\nconst kc = { 'Wi-Fi': C[0], 'Ethernet': C[1], 'Guest Wi-Fi': C[2], 'Other': C[3] };\nconst idle = dark ? '#3a3a37' : '#d8d7d0', idleDeep = dark ? '#4a4a46' : '#c3c2b7';\nconst sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);\nconst online = sum(groups.Online), total = online + sum(groups.Offline);\nconst data = ['Online', 'Offline'].filter((g) => sum(groups[g]) > 0).map((g) => ({\n  name: g, itemStyle: { color: g === 'Online' ? GOOD : idle },\n  children: Object.entries(groups[g]).sort().map(([k, v]) => ({ name: k, value: v, itemStyle: { color: g === 'Online' ? kc[k] || C[4] : idleDeep } })),\n}));\nreturn {\n  ...base,\n  title: { text: String(online), subtext: `of ${total} online`, left: 'center', top: '41%', textAlign: 'center',\n    textStyle: { fontSize: 28, fontWeight: 600, color: ink.p }, subtextStyle: { fontSize: 11, color: ink.m }, itemGap: 2 },\n  tooltip: { ...tip, formatter: (p) => `${p.treePathInfo.slice(1).map((x) => x.name).join(' › ')}<br/><b>${p.value}</b> devices` },\n  series: [{ type: 'sunburst', data, sort: null, radius: ['34%', '94%'], nodeClick: 'rootToNode',\n    itemStyle: { borderColor: ink.surf, borderWidth: 2, borderRadius: 4 },\n    label: { color: '#ffffff', fontSize: 11, minAngle: 14 },\n    levels: [{}, { r0: '34%', r: '58%', label: { fontWeight: 600, rotate: 0 } }, { r0: '60%', r: '94%', label: { rotate: 'tangential' } }],\n    emphasis: { focus: 'ancestor' } }],\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "volkovlabs-echarts-panel",
+      "title": "DSL line errors in range",
+      "description": "CRC, FEC and HEC errors counted over the selected time range.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 27,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "sum by (error_type, network_io_direction) (increase(hw_errors_total[$__range]))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst types = ['crc', 'fec', 'hec'];\nconst v = (t, d) => { const s = frames.find((x) => lab(x).error_type === t && lab(x).network_io_direction === d); return s ? Math.round(last(s) || 0) : 0; };\nconst rx = types.map((t) => v(t, 'receive')), tx = types.map((t) => v(t, 'transmit'));\nconst total = [...rx, ...tx].reduce((a, b) => a + b, 0);\nconst bar = (name, data, c) => ({ name, type: 'bar', data, barMaxWidth: 28, itemStyle: { color: c, borderRadius: [4, 4, 0, 0] },\n  label: { show: true, position: 'top', color: ink.s, fontSize: 11, formatter: (p) => p.value ? p.value.toLocaleString() : '' } });\nreturn {\n  ...base,\n  legend: { top: 0, right: 8, icon: 'roundRect', itemWidth: 12, itemHeight: 4, textStyle: { color: ink.s } },\n  grid: { left: 48, right: 16, top: 36, bottom: 28 },\n  tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: ink.grid, opacity: 0.4 } } },\n  xAxis: { type: 'category', data: types.map((t) => t.toUpperCase()), axisLine: { lineStyle: { color: ink.base } }, axisTick: { show: false }, axisLabel: { color: ink.s } },\n  yAxis: { type: 'value', minInterval: 1, axisLabel: { color: ink.m }, splitLine: { lineStyle: { color: ink.grid } } },\n  graphic: total === 0 ? [{ type: 'text', left: 'center', top: '42%', style: { text: 'No line errors in this time range', fill: GOOD, fontSize: 14, fontWeight: 600 } }] : [],\n  series: [bar('Downstream', rx, C[0]), bar('Upstream', tx, C[1])],\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "volkovlabs-echarts-panel",
+      "title": "DSL signal-to-noise margin",
+      "description": "Below 6 dB the line is prone to resyncs.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_dsl_noise_margin_dB",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_dsl_attenuation_dB",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst pick = (ref, d) => frames.find((s) => s.refId === ref && lab(s).network_io_direction === d);\nconst series = [['Downstream', 'receive', C[0]], ['Upstream', 'transmit', C[1]]].map(([name, d, c]) => {\n  const s = pick('A', d);\n  return { name, type: 'line', data: s ? pts(s) : [], smooth: 0.3, showSymbol: false, symbolSize: 8,\n    lineStyle: { width: 2, color: c, cap: 'round' }, itemStyle: { color: c, borderColor: ink.surf, borderWidth: 2 },\n    endLabel: { show: true, color: ink.s, fontSize: 11, formatter: (p) => `${p.value[1].toFixed(1)} dB` } };\n});\nseries[0].markArea = { silent: true, itemStyle: { color: CRIT, opacity: 0.12 },\n  label: { color: CRIT, fontSize: 11, position: 'insideTopLeft' }, data: [[{ yAxis: 0, name: 'low margin (< 6 dB)' }, { yAxis: 6 }]] };\nconst att = (d) => { const s = pick('B', d); return s ? (last(s) || 0).toFixed(1) : '-'; };\nreturn {\n  ...base,\n  title: { text: `Attenuation  down ${att('receive')} dB  ·  up ${att('transmit')} dB`, left: 8, top: 0, textStyle: { fontSize: 12, fontWeight: 500, color: ink.m } },\n  legend: { top: 0, right: 8, icon: 'roundRect', itemWidth: 12, itemHeight: 4, textStyle: { color: ink.s } },\n  grid: { left: 48, right: 64, top: 36, bottom: 28 },\n  tooltip: { ...tip, trigger: 'axis', valueFormatter: (v) => `${(+v).toFixed(1)} dB` },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: ink.base } }, axisTick: { show: false }, axisLabel: { color: ink.m, hideOverlap: true } },\n  yAxis: { type: 'value', min: 0, axisLabel: { color: ink.m, formatter: '{value} dB' }, splitLine: { lineStyle: { color: ink.grid } } },\n  series,\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "volkovlabs-echarts-panel",
+      "title": "WAN utilization",
+      "description": "Download throughput as a share of the WAN link speed.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 36,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "100 * sum(rate(hw_network_io_bytes_total{hw_name=\"wan\",network_io_direction=\"receive\"}[$__rate_interval])) / max(hw_network_bandwidth_limit_bytes_per_second{hw_id=\"fritzbox.wan\"})",
+          "legendFormat": "",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "pluginVersion": "7.2.5",
+      "options": {
+        "editorMode": "code",
+        "getOption": "const T = context.grafana && context.grafana.theme;\nconst dark = T ? T.isDark : true;\nconst ink = dark\n  ? { p: '#ffffff', s: '#c3c2b7', m: '#898781', grid: '#2c2c2a', base: '#383835', surf: '#181b1f' }\n  : { p: '#0b0b0b', s: '#52514e', m: '#898781', grid: '#e1e0d9', base: '#c3c2b7', surf: '#ffffff' };\nconst C = dark\n  ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181']\n  : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];\nconst GOOD = '#0ca30c', CRIT = '#d03b3b';\nconst echarts = context.echarts;\nconst frames = context.panel.data.series || [];\nconst num = (s) => s.fields.find((f) => f.type === 'number');\nconst tim = (s) => s.fields.find((f) => f.type === 'time');\nconst lab = (s) => (num(s) && num(s).labels) || {};\nconst last = (s) => { const v = Array.from(num(s).values); return v.length ? v[v.length - 1] : null; };\nconst pts = (s) => { const t = Array.from(tim(s).values), v = Array.from(num(s).values); return t.map((x, i) => [x, v[i]]); };\nconst bps = (b) => { const a = Math.abs(b || 0); return a >= 1e9 ? (a / 1e9).toFixed(2) + ' Gb/s' : a >= 1e6 ? (a / 1e6).toFixed(1) + ' Mb/s' : a >= 1e3 ? (a / 1e3).toFixed(0) + ' kb/s' : a.toFixed(0) + ' b/s'; };\nconst tip = {\n  backgroundColor: dark ? 'rgba(24,27,31,0.96)' : 'rgba(255,255,255,0.98)',\n  borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(11,11,11,0.10)',\n  textStyle: { color: ink.p, fontSize: 12 },\n  extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);',\n};\nconst base = { backgroundColor: 'transparent', textStyle: { fontFamily: 'Inter, Helvetica, Arial, sans-serif', color: ink.s }, animationDuration: 900, animationEasing: 'cubicOut' };\n\nconst s = frames[0];\nconst data = s ? pts(s) : [];\nconst now = data.length ? data[data.length - 1][1] : 0;\nreturn {\n  ...base,\n  title: { text: `${(now || 0).toFixed(1)}%`, subtext: 'of downstream link speed now', left: 8, top: 0,\n    textStyle: { fontSize: 22, fontWeight: 600, color: ink.p }, subtextStyle: { fontSize: 11, color: ink.m }, itemGap: 2 },\n  grid: { left: 48, right: 20, top: 56, bottom: 28 },\n  tooltip: { ...tip, trigger: 'axis', valueFormatter: (v) => `${(+v).toFixed(2)}%` },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: ink.base } }, axisTick: { show: false }, axisLabel: { color: ink.m, hideOverlap: true } },\n  yAxis: { type: 'value', min: 0, max: (v) => Math.max(10, Math.ceil(v.max / 10) * 10), axisLabel: { color: ink.m, formatter: '{value}%' }, splitLine: { lineStyle: { color: ink.grid } } },\n  visualMap: { show: false, type: 'continuous', dimension: 1, min: 0, max: 100, inRange: { color: dark ? ['#5f9ee9', '#1d5aa8'] : ['#8ab6ec', '#1d5aa8'] } },\n  series: [{ name: 'Utilization', type: 'line', data, smooth: 0.35, showSymbol: false, lineStyle: { width: 2 },\n    areaStyle: { opacity: 0.18 },\n    markLine: { silent: true, symbol: 'none', lineStyle: { color: CRIT, type: 'dashed', width: 1 },\n      label: { color: CRIT, fontSize: 11, formatter: 'saturated 80%' }, data: [{ yAxis: 80 }] } }],\n};",
+        "renderer": "canvas",
+        "map": "none",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "Connected devices",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 45,
+        "w": 24,
+        "h": 11
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "expr": "fritzbox_hosts_info_ratio",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "otel_scope_name": true,
+              "otel_scope_version": true,
+              "otel_scope_schema_url": true
+            },
+            "indexByName": {
+              "active": 0,
+              "friendly_name": 1,
+              "hostname": 2,
+              "ip": 3,
+              "mac": 4,
+              "interface_type": 5,
+              "guest": 6
+            },
+            "renameByName": {
+              "active": "Status",
+              "friendly_name": "Device",
+              "hostname": "Hostname",
+              "ip": "IP",
+              "mac": "MAC",
+              "interface_type": "Connection",
+              "guest": "Guest"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "Online",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "Offline",
+                        "color": "#898781",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Guest"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "Guest",
+                        "color": "#199e70",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Connection"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "802.11": {
+                        "text": "Wi-Fi",
+                        "index": 0
+                      },
+                      "Ethernet": {
+                        "text": "Ethernet",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Status",
+            "desc": true
+          }
+        ]
+      }
+    }
+  ]
+}
