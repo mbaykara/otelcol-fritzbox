@@ -8,7 +8,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.160.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.160.0
 	github.com/stretchr/testify v1.12.1
-	go.opentelemetry.io/collector/component v1.67.0
+	go.opentelemetry.io/collector/component v1.68.0
 	go.opentelemetry.io/collector/component/componenttest v0.160.0
 	go.opentelemetry.io/collector/config/configopaque v1.66.0
 	go.opentelemetry.io/collector/config/configtls v1.66.0
@@ -18,16 +18,16 @@ require (
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.66.0
 	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.66.0
 	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.66.0
-	go.opentelemetry.io/collector/connector v0.160.0
-	go.opentelemetry.io/collector/consumer v1.66.0
-	go.opentelemetry.io/collector/consumer/consumertest v0.160.0
+	go.opentelemetry.io/collector/connector v0.162.0
+	go.opentelemetry.io/collector/consumer v1.68.0
+	go.opentelemetry.io/collector/consumer/consumertest v0.162.0
 	go.opentelemetry.io/collector/exporter v1.66.0
 	go.opentelemetry.io/collector/exporter/debugexporter v0.160.0
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.160.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.160.0
 	go.opentelemetry.io/collector/extension v1.66.0
 	go.opentelemetry.io/collector/otelcol v0.160.0
-	go.opentelemetry.io/collector/pdata v1.67.0
+	go.opentelemetry.io/collector/pdata v1.68.0
 	go.opentelemetry.io/collector/processor v1.66.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.160.0
 	go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.160.0
@@ -170,7 +170,7 @@ require (
 	go.opentelemetry.io/collector/connector/xconnector v0.160.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.160.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror/xconsumererror v0.160.0 // indirect
-	go.opentelemetry.io/collector/consumer/xconsumer v0.160.0 // indirect
+	go.opentelemetry.io/collector/consumer/xconsumer v0.162.0 // indirect
 	go.opentelemetry.io/collector/exporter/exporterhelper v0.160.0 // indirect
 	go.opentelemetry.io/collector/exporter/exporterhelper/xexporterhelper v0.160.0 // indirect
 	go.opentelemetry.io/collector/exporter/exportertest v0.160.0 // indirect
@@ -180,18 +180,18 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.160.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.160.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.160.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.67.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.68.0 // indirect
 	go.opentelemetry.io/collector/filter v0.160.0 // indirect
-	go.opentelemetry.io/collector/internal/componentalias v0.160.0 // indirect
-	go.opentelemetry.io/collector/internal/fanoutconsumer v0.160.0 // indirect
+	go.opentelemetry.io/collector/internal/componentalias v0.162.0 // indirect
+	go.opentelemetry.io/collector/internal/fanoutconsumer v0.162.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.160.0 // indirect
 	go.opentelemetry.io/collector/internal/schemagen v0.160.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.160.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.160.0 // indirect
-	go.opentelemetry.io/collector/pdata/pprofile v0.160.0 // indirect
-	go.opentelemetry.io/collector/pdata/testdata v0.160.0 // indirect
+	go.opentelemetry.io/collector/pdata/pprofile v0.162.0 // indirect
+	go.opentelemetry.io/collector/pdata/testdata v0.162.0 // indirect
 	go.opentelemetry.io/collector/pdata/xpdata v0.160.0 // indirect
-	go.opentelemetry.io/collector/pipeline v1.66.0 // indirect
+	go.opentelemetry.io/collector/pipeline v1.68.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.160.0 // indirect
 	go.opentelemetry.io/collector/processor/processorhelper v0.160.0 // indirect
 	go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper v0.160.0 // indirect
