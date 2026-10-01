@@ -9,7 +9,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.160.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/component v1.68.0
-	go.opentelemetry.io/collector/component/componenttest v0.160.0
+	go.opentelemetry.io/collector/component/componenttest v0.162.0
 	go.opentelemetry.io/collector/config/configopaque v1.66.0
 	go.opentelemetry.io/collector/config/configtls v1.66.0
 	go.opentelemetry.io/collector/confmap v1.66.0
