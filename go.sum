@@ -436,6 +436,7 @@ go.opentelemetry.io/collector/client v1.66.0 h1:uLwmr3QejpA0upn8bBAeDjMofC5kgmou
 go.opentelemetry.io/collector/client v1.66.0/go.mod h1:pH/NTKb1jXgUYXvVnRZpYq/kiBse8hJJcQSkCns4dF8=
 go.opentelemetry.io/collector/cmd/builder v0.160.0 h1:oAWgSxRGp7OoiqN4dqSXjSUhiE2utL8NsfJ8tVGGn64=
 go.opentelemetry.io/collector/cmd/builder v0.160.0/go.mod h1:iTyR1FK9BgMlgrqU3Rc7VEg4gm0p3ftxtf8jBqtKsxw=
+go.opentelemetry.io/collector/cmd/builder v0.162.0/go.mod h1:LGL2db9cpIe3G3qRZs1C5iFJy330KX4KN4Tr6QLzp0Q=
 go.opentelemetry.io/collector/cmd/mdatagen v0.160.0 h1:eS6UtiDaz+sAxtWejDJ4/f2SEJMf31tGhWjwmc6E07w=
 go.opentelemetry.io/collector/cmd/mdatagen v0.160.0/go.mod h1:65P4BfIqlAnb9AsG9ttVJcQ42LnpJtThyjwvNzCxwtA=
 go.opentelemetry.io/collector/component v1.66.0 h1:JaAwBPug6Wm5V0+4qHpWVcazabgZvEozfcMC8gmgIY4=
@@ -728,6 +729,7 @@ golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.40.0 h1:hUv+3cXcdRHz08UmSiOob7sadHig73uo5bkXxQ/tvUs=
 golang.org/x/mod v0.40.0/go.mod h1:0/weTWkPWGBikyTWAX3dkjVztMmBA5hM0DH6BElSupE=
+golang.org/x/mod v0.41.0/go.mod h1:Ek9pY8RKWXwsWvd3rQiHYtMqkjSUV+s1Rj7j4H5Ur6o=
 golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200226121028-0de0cce0169b/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
