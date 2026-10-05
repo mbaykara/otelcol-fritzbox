@@ -12,8 +12,8 @@ require (
 	go.opentelemetry.io/collector/component/componenttest v0.162.0
 	go.opentelemetry.io/collector/config/configopaque v1.66.0
 	go.opentelemetry.io/collector/config/configtls v1.66.0
-	go.opentelemetry.io/collector/confmap v1.66.0
-	go.opentelemetry.io/collector/confmap/provider/envprovider v1.66.0
+	go.opentelemetry.io/collector/confmap v1.68.0
+	go.opentelemetry.io/collector/confmap/provider/envprovider v1.68.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.66.0
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.66.0
 	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.66.0
