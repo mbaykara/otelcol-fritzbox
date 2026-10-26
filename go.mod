@@ -12,10 +12,10 @@ require (
 	go.opentelemetry.io/collector/component/componenttest v0.162.0
 	go.opentelemetry.io/collector/config/configopaque v1.66.0
 	go.opentelemetry.io/collector/config/configtls v1.66.0
-	go.opentelemetry.io/collector/confmap v1.66.0
+	go.opentelemetry.io/collector/confmap v1.70.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.66.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.66.0
-	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.66.0
+	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.70.0
 	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.66.0
 	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.66.0
 	go.opentelemetry.io/collector/connector v0.162.0
@@ -108,7 +108,7 @@ require (
 	github.com/knadh/koanf/providers/env/v2 v2.0.1 // indirect
 	github.com/knadh/koanf/providers/file v1.2.1 // indirect
 	github.com/knadh/koanf/providers/fs v1.0.1 // indirect
-	github.com/knadh/koanf/v2 v2.3.6 // indirect
+	github.com/knadh/koanf/v2 v2.3.8 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
@@ -180,7 +180,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.160.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.160.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.160.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.68.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.70.0 // indirect
 	go.opentelemetry.io/collector/filter v0.160.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.162.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.162.0 // indirect
