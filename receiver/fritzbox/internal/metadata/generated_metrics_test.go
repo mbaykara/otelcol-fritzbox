@@ -89,30 +89,45 @@ func TestMetricsBuilder(t *testing.T) {
 			mb.RecordFritzboxDslAttenuationDataPoint(ts, 1, AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxDslAttenuationDataPoint(ts, 3, AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxDslAttenuationDataPoint(ts+1, 3, AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricFritzboxDslAttenuation.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordFritzboxDslErrorSecondsDataPoint(ts, 1, AttributeSeverityErrored)
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxDslErrorSecondsDataPoint(ts, 3, AttributeSeveritySeverelyErrored)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxDslErrorSecondsDataPoint(ts+1, 3, AttributeSeveritySeverelyErrored)
+				assert.Equal(t, 2, mb.metricFritzboxDslErrorSeconds.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordFritzboxDslNoiseMarginDataPoint(ts, 1, AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxDslNoiseMarginDataPoint(ts, 3, AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxDslNoiseMarginDataPoint(ts+1, 3, AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricFritzboxDslNoiseMargin.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordFritzboxDslRateCurrentDataPoint(ts, 1, AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxDslRateCurrentDataPoint(ts, 3, AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxDslRateCurrentDataPoint(ts+1, 3, AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricFritzboxDslRateCurrent.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordFritzboxDslRateMaxDataPoint(ts, 1, AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxDslRateMaxDataPoint(ts, 3, AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxDslRateMaxDataPoint(ts+1, 3, AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricFritzboxDslRateMax.data.Gauge().DataPoints().Len())
 			}
 
 			allMetricsCount++
@@ -122,6 +137,9 @@ func TestMetricsBuilder(t *testing.T) {
 			mb.RecordFritzboxHostsInfoDataPoint(ts, 1, "hostname-val", "ip-val", "mac-val", "interface_type-val", "active-val", "guest-val", "friendly_name-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxHostsInfoDataPoint(ts, 3, "hostname-val-2", "ip-val-2", "mac-val-2", "interface_type-val-2", "active-val-2", "guest-val-2", "friendly_name-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxHostsInfoDataPoint(ts+1, 3, "hostname-val-2", "ip-val-2", "mac-val-2", "interface_type-val-2", "active-val-2", "guest-val-2", "friendly_name-val-2")
+				assert.Equal(t, 2, mb.metricFritzboxHostsInfo.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
@@ -137,54 +155,81 @@ func TestMetricsBuilder(t *testing.T) {
 			mb.RecordFritzboxWanExternalIPDataPoint(ts, 1, "external_ip-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxWanExternalIPDataPoint(ts, 3, "external_ip-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxWanExternalIPDataPoint(ts+1, 3, "external_ip-val-2")
+				assert.Equal(t, 2, mb.metricFritzboxWanExternalIP.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordFritzboxWlanChannelDataPoint(ts, 1, "hw.id-val", "ssid-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxWlanChannelDataPoint(ts, 3, "hw.id-val-2", "ssid-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxWlanChannelDataPoint(ts+1, 3, "hw.id-val-2", "ssid-val-2")
+				assert.Equal(t, 2, mb.metricFritzboxWlanChannel.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordFritzboxWlanClientsDataPoint(ts, 1, "hw.id-val", "ssid-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordFritzboxWlanClientsDataPoint(ts, 3, "hw.id-val-2", "ssid-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordFritzboxWlanClientsDataPoint(ts+1, 3, "hw.id-val-2", "ssid-val-2")
+				assert.Equal(t, 2, mb.metricFritzboxWlanClients.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwErrorsDataPoint(ts, 1, "hw.id-val", AttributeErrorTypeFec, AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwErrorsDataPoint(ts, 3, "hw.id-val-2", AttributeErrorTypeCrc, AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwErrorsDataPoint(ts+1, 3, "hw.id-val-2", AttributeErrorTypeCrc, AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricHwErrors.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwNetworkBandwidthLimitDataPoint(ts, 1, "hw.id-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwNetworkBandwidthLimitDataPoint(ts, 3, "hw.id-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwNetworkBandwidthLimitDataPoint(ts+1, 3, "hw.id-val-2")
+				assert.Equal(t, 2, mb.metricHwNetworkBandwidthLimit.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwNetworkBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwNetworkBandwidthUtilizationDataPoint(ts, 3, "hw.id-val-2", AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwNetworkBandwidthUtilizationDataPoint(ts+1, 3, "hw.id-val-2", AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricHwNetworkBandwidthUtilization.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwNetworkIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwNetworkIoDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwNetworkIoDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricHwNetworkIo.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwNetworkPacketsDataPoint(ts, 1, "hw.id-val", "hw.name-val", AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwNetworkPacketsDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwNetworkPacketsDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricHwNetworkPackets.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwNetworkUpDataPoint(ts, 1, "hw.id-val", "hw.name-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwNetworkUpDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwNetworkUpDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2")
+				assert.Equal(t, 2, mb.metricHwNetworkUp.data.Gauge().DataPoints().Len())
 			}
 
 			res := pcommon.NewResource()
@@ -264,7 +309,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.dsl.attenuation"], "Found a duplicate in the metrics slice: fritzbox.dsl.attenuation")
 						validatedMetrics["fritzbox.dsl.attenuation"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "DSL line attenuation.", mi.Description())
 						assert.Equal(t, "dB", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -306,7 +353,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.dsl.error_seconds"], "Found a duplicate in the metrics slice: fritzbox.dsl.error_seconds")
 						validatedMetrics["fritzbox.dsl.error_seconds"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Cumulative count of DSL errored seconds.", mi.Description())
 						assert.Equal(t, "s", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -348,7 +397,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.dsl.noise_margin"], "Found a duplicate in the metrics slice: fritzbox.dsl.noise_margin")
 						validatedMetrics["fritzbox.dsl.noise_margin"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "DSL noise margin (signal-to-noise ratio).", mi.Description())
 						assert.Equal(t, "dB", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -388,7 +439,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.dsl.rate.current"], "Found a duplicate in the metrics slice: fritzbox.dsl.rate.current")
 						validatedMetrics["fritzbox.dsl.rate.current"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Current DSL sync rate.", mi.Description())
 						assert.Equal(t, "bit/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -428,7 +481,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.dsl.rate.max"], "Found a duplicate in the metrics slice: fritzbox.dsl.rate.max")
 						validatedMetrics["fritzbox.dsl.rate.max"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Maximum attainable DSL rate.", mi.Description())
 						assert.Equal(t, "bit/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -498,7 +553,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.hosts.info"], "Found a duplicate in the metrics slice: fritzbox.hosts.info")
 						validatedMetrics["fritzbox.hosts.info"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "One series per known host; value is always 1, attributes carry the device identity.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -586,7 +643,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.wan.external_ip"], "Found a duplicate in the metrics slice: fritzbox.wan.external_ip")
 						validatedMetrics["fritzbox.wan.external_ip"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Always 1; the external WAN IP address is carried in the external_ip attribute.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -629,7 +688,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.wlan.channel"], "Found a duplicate in the metrics slice: fritzbox.wlan.channel")
 						validatedMetrics["fritzbox.wlan.channel"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Channel the WLAN radio is operating on.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -674,7 +735,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["fritzbox.wlan.clients"], "Found a duplicate in the metrics slice: fritzbox.wlan.clients")
 						validatedMetrics["fritzbox.wlan.clients"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Number of clients currently associated with the WLAN radio.", mi.Description())
 						assert.Equal(t, "{client}", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -724,7 +787,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.errors"], "Found a duplicate in the metrics slice: hw.errors")
 						validatedMetrics["hw.errors"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Number of DSL line errors encountered by the Fritz!Box WAN interface.", mi.Description())
 						assert.Equal(t, "{error}", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -770,7 +835,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.network.bandwidth.limit"], "Found a duplicate in the metrics slice: hw.network.bandwidth.limit")
 						validatedMetrics["hw.network.bandwidth.limit"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Link speed of the Fritz!Box WAN interface.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -813,7 +880,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.network.bandwidth.utilization"], "Found a duplicate in the metrics slice: hw.network.bandwidth.utilization")
 						validatedMetrics["hw.network.bandwidth.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Utilization of the Fritz!Box WAN bandwidth as a fraction.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -863,7 +932,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.network.io"], "Found a duplicate in the metrics slice: hw.network.io")
 						validatedMetrics["hw.network.io"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Received and transmitted network traffic in bytes on the Fritz!Box WAN interface.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -917,7 +988,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.network.packets"], "Found a duplicate in the metrics slice: hw.network.packets")
 						validatedMetrics["hw.network.packets"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Received and transmitted network traffic in packets on Fritz!Box interfaces.", mi.Description())
 						assert.Equal(t, "{packet}", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -966,7 +1039,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.network.up"], "Found a duplicate in the metrics slice: hw.network.up")
 						validatedMetrics["hw.network.up"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Link status of a Fritz!Box interface (1 = up, 0 = down).", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
